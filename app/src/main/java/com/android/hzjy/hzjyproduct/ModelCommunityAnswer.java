@@ -51,7 +51,8 @@ public class ModelCommunityAnswer extends Fragment{
     private static String mContext="xxxxxxxxxxxxx";
     //要显示的页面
     static private int FragmentPage;
-    private View mview,mCommunityAnswerView ,mCommunityAnswerSelectView ,mCommunityAnswerAddView ,mCommunityAnswerChooseSignView;
+    private View mview,mCommunityAnswerView ,mCommunityAnswerSelectView ,mCommunityAnswerAddView ,mCommunityAnswerChooseSignView
+            ,mCommunityAnswerDetailsView;
     private int height = 1344;
     private int width = 720;
     //弹出窗口（筛选条件）
@@ -180,6 +181,15 @@ public class ModelCommunityAnswer extends Fragment{
                     }
                 });
             });
+            //点击查看评论详情
+            LinearLayout communityanswer_child_content1 = view.findViewById(R.id.communityanswer_child_content1);
+            communityanswer_child_content1.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
+            });
+//            //点击查看全部评论进入评论详情
+//            communityanswer_child_lookalldiscuss.setOnClickListener(v->{
+//                CommunityAnswerDetailsShow();
+//            });
         }
         {
             View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child, null);
@@ -254,6 +264,15 @@ public class ModelCommunityAnswer extends Fragment{
                     }
                 });
             });
+            //点击查看评论详情
+            LinearLayout communityanswer_child_content1 = view.findViewById(R.id.communityanswer_child_content1);
+            communityanswer_child_content1.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
+            });
+//            //点击查看全部评论进入评论详情
+//            communityanswer_child_lookalldiscuss.setOnClickListener(v->{
+//                CommunityAnswerDetailsShow();
+//            });
         }
         {
             View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child, null);
@@ -347,6 +366,15 @@ public class ModelCommunityAnswer extends Fragment{
                     }
                 });
             });
+            //点击查看评论详情
+            LinearLayout communityanswer_child_content1 = view.findViewById(R.id.communityanswer_child_content1);
+            communityanswer_child_content1.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
+            });
+//            //点击查看全部评论进入评论详情
+//            communityanswer_child_lookalldiscuss.setOnClickListener(v->{
+//                CommunityAnswerDetailsShow();
+//            });
         }
         {
             View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child, null);
@@ -413,10 +441,44 @@ public class ModelCommunityAnswer extends Fragment{
             {
                 View respondView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child1, null);
                 communityanswer_child_content.addView(respondView);
+                respondView.setOnClickListener(v->{
+                    TextView communityanswer_child1_name = respondView.findViewById(R.id.communityanswer_child1_name);
+                    mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_child1_name.getText().toString(),false);
+                    mCustomDialog.setOnKeyListener(keylistener);
+                    mCustomDialog.show();
+                    mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                        @Override
+                        public void publish() {
+
+                        }
+
+                        @Override
+                        public void image() {
+
+                        }
+                    });
+                });
             }
             {
                 View respondView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child1, null);
                 communityanswer_child_content.addView(respondView);
+                respondView.setOnClickListener(v->{
+                    TextView communityanswer_child1_name = respondView.findViewById(R.id.communityanswer_child1_name);
+                    mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_child1_name.getText().toString(),false);
+                    mCustomDialog.setOnKeyListener(keylistener);
+                    mCustomDialog.show();
+                    mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                        @Override
+                        public void publish() {
+
+                        }
+
+                        @Override
+                        public void image() {
+
+                        }
+                    });
+                });
             }
             //点击评论，对其进行回复
             LinearLayout communityanswer_child_function_discuss = view.findViewById(R.id.communityanswer_child_function_discuss);
@@ -437,6 +499,15 @@ public class ModelCommunityAnswer extends Fragment{
                 });
             });
             //超过三条，显示查看全部
+            //点击查看评论详情
+            LinearLayout communityanswer_child_content1 = view.findViewById(R.id.communityanswer_child_content1);
+            communityanswer_child_content1.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
+            });
+//            //点击查看全部评论进入评论详情
+//            communityanswer_child_lookalldiscuss.setOnClickListener(v->{
+//                CommunityAnswerDetailsShow();
+//            });
         }
         {
             View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child, null);
@@ -503,14 +574,65 @@ public class ModelCommunityAnswer extends Fragment{
             {
                 View respondView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child1, null);
                 communityanswer_child_content.addView(respondView);
+                respondView.setOnClickListener(v->{
+                    TextView communityanswer_child1_name = respondView.findViewById(R.id.communityanswer_child1_name);
+                    mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_child1_name.getText().toString(),false);
+                    mCustomDialog.setOnKeyListener(keylistener);
+                    mCustomDialog.show();
+                    mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                        @Override
+                        public void publish() {
+
+                        }
+
+                        @Override
+                        public void image() {
+
+                        }
+                    });
+                });
             }
             {
                 View respondView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child1, null);
                 communityanswer_child_content.addView(respondView);
+                respondView.setOnClickListener(v->{
+                    TextView communityanswer_child1_name = respondView.findViewById(R.id.communityanswer_child1_name);
+                    mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_child1_name.getText().toString(),false);
+                    mCustomDialog.setOnKeyListener(keylistener);
+                    mCustomDialog.show();
+                    mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                        @Override
+                        public void publish() {
+
+                        }
+
+                        @Override
+                        public void image() {
+
+                        }
+                    });
+                });
             }
             {
                 View respondView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child1, null);
                 communityanswer_child_content.addView(respondView);
+                respondView.setOnClickListener(v->{
+                    TextView communityanswer_child1_name = respondView.findViewById(R.id.communityanswer_child1_name);
+                    mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_child1_name.getText().toString(),false);
+                    mCustomDialog.setOnKeyListener(keylistener);
+                    mCustomDialog.show();
+                    mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                        @Override
+                        public void publish() {
+
+                        }
+
+                        @Override
+                        public void image() {
+
+                        }
+                    });
+                });
             }
             //超过三条，显示查看全部
             LinearLayout communityanswer_child_lookalldiscuss = view.findViewById(R.id.communityanswer_child_lookalldiscuss);
@@ -535,6 +657,15 @@ public class ModelCommunityAnswer extends Fragment{
 
                     }
                 });
+            });
+            //点击查看评论详情
+            LinearLayout communityanswer_child_content1 = view.findViewById(R.id.communityanswer_child_content1);
+            communityanswer_child_content1.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
+            });
+            //点击查看全部评论进入评论详情
+            communityanswer_child_lookalldiscuss.setOnClickListener(v->{
+                CommunityAnswerDetailsShow();
             });
         }
     }
@@ -1101,6 +1232,7 @@ public class ModelCommunityAnswer extends Fragment{
                 }
             }
         }
+        communityanswer_choosesign_choosecount.setText(String.valueOf(mCommunityAnswerChooseSignList.size()));
     }
     private void CommunityAnswerSelectShow(){
         if (mview == null) {
@@ -1126,6 +1258,146 @@ public class ModelCommunityAnswer extends Fragment{
         communityanswer_layout_main.addView(mCommunityAnswerSelectView);
     }
 
+    public void CommunityAnswerDetailsShow() {
+        if (mview == null) {
+            return;
+        }
+        HideAllLayout();
+        mControlMainActivity.Page_onCommunityAnswerDetails();
+        LinearLayout communityanswer_layout_main = mview.findViewById(R.id.communityanswer_layout_main);
+        if (mCommunityAnswerDetailsView == null) {
+            mCommunityAnswerDetailsView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_details, null);
+            //下滑刷新处理
+            ModelPtrFrameLayout communityanswer_datails_ptr_frame = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_ptr_frame);
+            PtrClassicDefaultHeader header = new PtrClassicDefaultHeader(mControlMainActivity);
+            communityanswer_datails_ptr_frame.addPtrUIHandler(header);
+            communityanswer_datails_ptr_frame.setHeaderView(header);
+            communityanswer_datails_ptr_frame.setPtrHandler(new PtrHandler() {
+                @Override
+                public boolean checkCanDoRefresh(PtrFrameLayout frame, View content, View header) {
+                    // 默认实现，根据实际情况做改动
+                    return PtrDefaultHandler.checkContentCanBePulledDown(frame, content, header);
+                }
+
+                @Override
+                public void onRefreshBegin(PtrFrameLayout frame) {
+                    //在这里写自己下拉刷新数据的请求
+                    //需要结束刷新头
+                    communityanswer_datails_ptr_frame.refreshComplete();
+                }
+            });
+            //点击回复问题
+            LinearLayout communityanswer_datails_content1 = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_content1);
+            communityanswer_datails_content1.setOnClickListener(v->{
+                TextView communityanswer_datails_name = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_name);
+                mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_datails_name.getText().toString(),false);
+                mCustomDialog.setOnKeyListener(keylistener);
+                mCustomDialog.show();
+                mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                    @Override
+                    public void publish() {
+
+                    }
+
+                    @Override
+                    public void image() {
+
+                    }
+                });
+            });
+
+        }
+        communityanswer_layout_main.addView(mCommunityAnswerDetailsView);
+        TextView communityanswer_datails_titletext = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_titletext);
+//        communityanswer_datails_titletext.setText("");
+        //图片区
+        GridLayout communityanswer_datails_imagelayout = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_imagelayout);
+        communityanswer_datails_imagelayout.removeAllViews();
+        {
+            View imageView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.controllercustomroundangleimageview_layout, null);
+            ControllerCustomRoundAngleImageView CustomRoundAngleImageView = imageView.findViewById(R.id.CustomRoundAngleImageView);
+            Glide.with(mControlMainActivity).
+                    load("").listener(new RequestListener<Drawable>() {
+                @Override
+                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                    Log.d("Warn","加载失败 errorMsg:" + (e != null ? e.getMessage() : "null"));
+                    return false;
+                }
+                @Override
+                public boolean onResourceReady(final Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                    Log.d("Warn","成功  Drawable Name:" + resource.getClass().getCanonicalName());
+                    return false;
+                }
+            })
+                    .error(mControlMainActivity.getResources().getDrawable(R.drawable.modelcoursecover)).into(CustomRoundAngleImageView);
+            communityanswer_datails_imagelayout.addView(imageView);
+        }
+        {
+            View imageView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.controllercustomroundangleimageview_layout, null);
+            ControllerCustomRoundAngleImageView CustomRoundAngleImageView = imageView.findViewById(R.id.CustomRoundAngleImageView);
+            Glide.with(mControlMainActivity).
+                    load("").listener(new RequestListener<Drawable>() {
+                @Override
+                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                    Log.d("Warn","加载失败 errorMsg:" + (e != null ? e.getMessage() : "null"));
+                    return false;
+                }
+                @Override
+                public boolean onResourceReady(final Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                    Log.d("Warn","成功  Drawable Name:" + resource.getClass().getCanonicalName());
+                    return false;
+                }
+            })
+                    .error(mControlMainActivity.getResources().getDrawable(R.drawable.modelcoursecover)).into(CustomRoundAngleImageView);
+            communityanswer_datails_imagelayout.addView(imageView);
+        }
+        //评论区
+        LinearLayout communityanswer_datails_linearlayout = mCommunityAnswerDetailsView.findViewById(R.id.communityanswer_datails_linearlayout);
+        communityanswer_datails_linearlayout.removeAllViews();
+        //测试数据
+        {
+            View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_details1, null);
+            communityanswer_datails_linearlayout.addView(view);
+            view.setOnClickListener(v->{
+                TextView communityanswer_datails1_name = view.findViewById(R.id.communityanswer_datails1_name);
+                mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_datails1_name.getText().toString(),false);
+                mCustomDialog.setOnKeyListener(keylistener);
+                mCustomDialog.show();
+                mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                    @Override
+                    public void publish() {
+
+                    }
+
+                    @Override
+                    public void image() {
+
+                    }
+                });
+            });
+        }
+        {
+            View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_details1, null);
+            communityanswer_datails_linearlayout.addView(view);
+            view.setOnClickListener(v->{
+                TextView communityanswer_datails1_name = view.findViewById(R.id.communityanswer_datails1_name);
+                mCustomDialog = new ControllerCustomDialog(mControlMainActivity, R.style.customdialogstyle,"回复 " + communityanswer_datails1_name.getText().toString(),false);
+                mCustomDialog.setOnKeyListener(keylistener);
+                mCustomDialog.show();
+                mCustomDialog.setOnClickPublishOrImagelistener(new ControllerCustomDialog.OnClickPublishOrImage() {
+                    @Override
+                    public void publish() {
+
+                    }
+
+                    @Override
+                    public void image() {
+
+                    }
+                });
+            });
+        }
+    }
     //隐藏所有图层
     private void HideAllLayout(){
         LinearLayout communityanswer_layout_main = mview.findViewById(R.id.communityanswer_layout_main);

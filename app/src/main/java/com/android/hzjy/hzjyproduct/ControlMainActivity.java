@@ -1430,10 +1430,17 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         mPage = "添加问答";
         mBeforePage = "社区问答";
     }
+
     //跳转社区问答-选择标签界面
     public void Page_onCommunityAnswerChooseSign(){
         mPage = "选择标签";
         mBeforePage = "添加问答";
+    }
+
+    //跳转社区问答-问答详情界面
+    public void Page_onCommunityAnswerDetails(){
+        mPage = "问答详情";
+        mBeforePage = "社区问答";
     }
 
     //社区问答-返回
@@ -1455,6 +1462,8 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             }
             mPage = "添加问答";
             mBeforePage = "社区问答";
+        } else if (mPage.equals("问答详情") && mBeforePage.equals("社区问答")) { //如果当前界面是问答详情，点击返回按钮，应该返回到社区问答
+            Page_CommunityAnswer();
         }
     }
 
@@ -1851,6 +1860,9 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     mBottomNavigationView.setVisibility(View.VISIBLE);
                     return true;
                 } else if (mPage.equals("问答搜索") && mBeforePage.equals("社区问答")) { //如果当前界面是问答搜索，点击返回按钮，应该返回到社区问答
+                    Page_CommunityAnswer();
+                    return true;
+                } else if (mPage.equals("问答详情") && mBeforePage.equals("社区问答")) { //如果当前界面是问答详情，点击返回按钮，应该返回到社区问答
                     Page_CommunityAnswer();
                     return true;
                 } else if (mPage.equals("添加问答") && mBeforePage.equals("社区问答")) { //如果当前界面是添加问答，点击返回按钮，应该返回到社区问答
