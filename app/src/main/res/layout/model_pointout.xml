@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--    题库 -->
+<LinearLayout xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/dp_350"
+    android:layout_height="@dimen/dp_500"
+    android:gravity="center"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    tools:ignore="MissingDefaultResource">
+    <ImageView
+        android:layout_width="@dimen/dp_60"
+        android:layout_height="@dimen/dp_60"
+        android:background="@mipmap/logo"/>
+</LinearLayout>

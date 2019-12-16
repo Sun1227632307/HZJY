@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr format="color" name="bgColor"/>
+    <attr name="color_shape_type">
+        <enum name="circle" value="0"/>
+        <enum name="rectangle" value="1"/>
+    </attr>
+    <attr name="fl_gravity">
+        <enum name="left" value="0"/>
+        <enum name="center" value="1"/>
+        <enum name="right" value="2"/>
+    </attr>
+    <attr format="color" name="rv_backgroundColor"/>
+    <attr format="color" name="rv_backgroundPressColor"/>
+    <attr format="dimension" name="rv_cornerRadius"/>
+    <attr format="dimension" name="rv_cornerRadius_BL"/>
+    <attr format="dimension" name="rv_cornerRadius_BR"/>
+    <attr format="dimension" name="rv_cornerRadius_TL"/>
+    <attr format="dimension" name="rv_cornerRadius_TR"/>
+    <attr format="boolean" name="rv_isRadiusHalfHeight"/>
+    <attr format="boolean" name="rv_isRippleEnable"/>
+    <attr format="boolean" name="rv_isWidthHeightEqual"/>
+    <attr format="color" name="rv_strokeColor"/>
+    <attr format="color" name="rv_strokePressColor"/>
+    <attr format="dimension" name="rv_strokeWidth"/>
+    <attr format="color" name="rv_textPressColor"/>
+    <declare-styleable name="ColorView">
+        <attr format="boolean" name="checked"/><!--是否选中-->
+        <attr format="color" name="color"/>
+        <attr format="color" name="border_color"/> <!--边框颜色-->
+        <attr format="dimension" name="border_width"/><!--边框宽度-->
+        <attr format="color" name="checked_border_color"/><!--选中边框颜色-->
+        <attr format="color" name="checked_ring_color"/><!--选中环颜色-->
+        <attr format="dimension" name="checked_ring_width"/>
+        <attr format="float" name="checked_ring_width_percent"/>
+        <attr name="color_shape_type"/>
+        <attr format="dimension" name="corner_radius"/> <!-- 圆角半径-->
+    </declare-styleable>
+    <declare-styleable name="DotView">
+        <attr format="color" name="dot_color"/><!--颜色值-->
+        <attr format="float" name="radius_percent"/>
+
+    </declare-styleable>
+    <declare-styleable name="FlowLayout">
+        <attr name="fl_gravity"/> <!--排列规则-->
+        <attr name="fl_interval"/> <!--child间隔-->
+    </declare-styleable>
+    <declare-styleable name="GifImageView">
+        <!--gif文件引用-->
+        <attr format="reference" name="gif_src"/>
+        <!--是否加载完自动播放-->
+        <attr format="boolean" name="auth_play"/>
+        <!--播放次放，默认永远播放-->
+        <attr format="integer" name="play_count"/>
+        <!--播放完成后是否停留在最后一帧，默认false-->
+        <attr format="boolean" name="end_last_frame"/>
+    </declare-styleable>
+    <declare-styleable name="HoloView">
+        <attr format="color" name="ringColor"/>
+        <attr format="float" name="ringWidthPercent"/>
+        <attr format="string" name="text"/>
+        <attr format="dimension" name="textSize"/>
+        <attr format="color" name="textColor"/>
+        <attr format="color" name="textBgColor"/>
+        <attr format="color" name="textBgColorStart"/>
+        <attr format="color" name="textBgColorEnd"/>
+    </declare-styleable>
+    <declare-styleable name="MultipleStatusLayout">
+        <attr format="reference" name="loadingView"/>
+        <attr format="reference" name="emptyView"/>
+        <attr format="reference" name="errorView"/>
+        <attr format="reference" name="contentView"/>
+        <attr format="reference" name="networdbadView"/>
+    </declare-styleable>
+    <declare-styleable name="RippleBackground">
+        <attr format="color" name="rb_color"/>
+        <attr format="dimension" name="rb_strokeWidth"/>
+        <attr format="dimension" name="rb_radius"/>
+        <attr format="integer" name="rb_duration"/>
+        <attr format="integer" name="rb_rippleAmount"/>
+        <attr format="float" name="rb_scale"/>
+        <attr format="integer" name="rb_type"/>
+    </declare-styleable>
+    <declare-styleable name="RippleView" parent="HoloView">
+        <attr format="color" name="rColor"/>
+        <attr format="float" name="rCirCilePercent"/>
+        <attr format="integer" name="rDurationTime"/>
+        <attr format="integer" name="rAmount"/>
+    </declare-styleable>
+    <declare-styleable name="RoundCornerLayout">
+        <attr format="dimension" name="cornerRadius"/>
+        <attr format="dimension" name="cornerTopLeftRadius"/>
+        <attr format="dimension" name="cornerTopRightRadius"/>
+        <attr format="dimension" name="cornerBottomLeftRadius"/>
+        <attr format="dimension" name="cornerBottomRightRadius"/>
+    </declare-styleable>
+    <declare-styleable name="RoundFrameLayout">
+        <attr name="rv_backgroundColor"/>
+        <attr name="rv_backgroundPressColor"/>
+        <attr name="rv_cornerRadius"/>
+        <attr name="rv_strokeWidth"/>
+        <attr name="rv_strokeColor"/>
+        <attr name="rv_strokePressColor"/>
+        <attr name="rv_isRadiusHalfHeight"/>
+        <attr name="rv_isWidthHeightEqual"/>
+        <attr name="rv_cornerRadius_TL"/>
+        <attr name="rv_cornerRadius_TR"/>
+        <attr name="rv_cornerRadius_BL"/>
+        <attr name="rv_cornerRadius_BR"/>
+        <attr name="rv_isRippleEnable"/>
+    </declare-styleable>
+    <declare-styleable name="RoundLinearLayout">
+        <attr name="rv_backgroundColor"/>
+        <attr name="rv_backgroundPressColor"/>
+        <attr name="rv_cornerRadius"/>
+        <attr name="rv_strokeWidth"/>
+        <attr name="rv_strokeColor"/>
+        <attr name="rv_strokePressColor"/>
+        <attr name="rv_isRadiusHalfHeight"/>
+        <attr name="rv_isWidthHeightEqual"/>
+        <attr name="rv_cornerRadius_TL"/>
+        <attr name="rv_cornerRadius_TR"/>
+        <attr name="rv_cornerRadius_BL"/>
+        <attr name="rv_cornerRadius_BR"/>
+        <attr name="rv_isRippleEnable"/>
+    </declare-styleable>
+    <declare-styleable name="RoundRelativeLayout">
+        <attr name="rv_backgroundColor"/>
+        <attr name="rv_backgroundPressColor"/>
+        <attr name="rv_cornerRadius"/>
+        <attr name="rv_strokeWidth"/>
+        <attr name="rv_strokeColor"/>
+        <attr name="rv_strokePressColor"/>
+        <attr name="rv_isRadiusHalfHeight"/>
+        <attr name="rv_isWidthHeightEqual"/>
+        <attr name="rv_cornerRadius_TL"/>
+        <attr name="rv_cornerRadius_TR"/>
+        <attr name="rv_cornerRadius_BL"/>
+        <attr name="rv_cornerRadius_BR"/>
+        <attr name="rv_isRippleEnable"/>
+    </declare-styleable>
+    <declare-styleable name="RoundTextView">
+        <attr name="rv_backgroundColor"/>
+        <attr name="rv_backgroundPressColor"/>
+        <attr name="rv_cornerRadius"/>
+        <attr name="rv_strokeWidth"/>
+        <attr name="rv_strokeColor"/>
+        <attr name="rv_strokePressColor"/>
+        <attr name="rv_textPressColor"/>
+        <attr name="rv_isRadiusHalfHeight"/>
+        <attr name="rv_isWidthHeightEqual"/>
+        <attr name="rv_cornerRadius_TL"/>
+        <attr name="rv_cornerRadius_TR"/>
+        <attr name="rv_cornerRadius_BL"/>
+        <attr name="rv_cornerRadius_BR"/>
+        <attr name="rv_isRippleEnable"/>
+    </declare-styleable>
+    <declare-styleable name="TriangleLayout">
+        <attr name="bgColor"/>
+    </declare-styleable>
+    <string name="app_name">libweight</string>
+</resources>

@@ -1,0 +1,37 @@
+-- Merging decision tree log ---
+manifest
+ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+	package
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:2:11-42
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+	android:versionCode
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:1-2:44
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml:1:11-69
+uses-sdk
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		ADDED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
+		INJECTED from F:\project\ProjectProduct\branches\00004-201907011750\HZJYProduct\libwidget\src\main\AndroidManifest.xml
