@@ -1451,7 +1451,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             }
         } else if (mPage.equals("选择标签") && mBeforePage.equals("添加问答")) { //如果当前界面是选择标签，点击返回按钮，应该返回到添加问答
             if (mModelCommunityAnswer != null) {
-                ((ModelCommunityAnswer) mModelCommunityAnswer).CommunityAnswerAddInit();
+                ((ModelCommunityAnswer) mModelCommunityAnswer).CommunityAnswerAddInit(false);
             }
             mPage = "添加问答";
             mBeforePage = "社区问答";
@@ -1862,7 +1862,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     return true;
                 } else if (mPage.equals("选择标签") && mBeforePage.equals("添加问答")) { //如果当前界面是选择标签，点击返回按钮，应该返回到添加问答
                     if (mModelCommunityAnswer != null) {
-                        ((ModelCommunityAnswer) mModelCommunityAnswer).CommunityAnswerAddInit();
+                        ((ModelCommunityAnswer) mModelCommunityAnswer).CommunityAnswerAddInit(false);
                     }
                     mPage = "添加问答";
                     mBeforePage = "社区问答";
@@ -2216,7 +2216,11 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     ((ModelCourse)mModelCourse).ModelCourseCoverQuestionPictureAdd(data);
                 } else if (mModelHomePage != null && beforePageS[beforePageS.length - 1].equals("首页") && mPage.equals("课程详情")){
                     ((ModelHomePage)mModelHomePage).ModelCourseCoverQuestionPictureAdd(data);
-                } else if (mModelCommunityAnswer != null && beforePageS[beforePageS.length - 1].equals("首页") && mPage.equals("社区问答")){
+                }
+//                else if (mModelCommunityAnswer != null && beforePageS[beforePageS.length - 1].equals("首页") && mPage.equals("社区问答")){
+//                    ((ModelCommunityAnswer)mModelCommunityAnswer).CommunityAnswerPictureAdd(data);
+//                }
+                else if (mModelCommunityAnswer != null && beforePageS[beforePageS.length - 1].equals("社区问答") && mPage.equals("添加问答")){
                     ((ModelCommunityAnswer)mModelCommunityAnswer).CommunityAnswerPictureAdd(data);
                 }
             }

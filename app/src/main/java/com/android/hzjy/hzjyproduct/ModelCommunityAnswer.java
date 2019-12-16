@@ -34,6 +34,8 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
+import net.sqlcipher.Cursor;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -149,14 +151,13 @@ public class ModelCommunityAnswer extends Fragment{
             //点击添加问答
             ImageView communityanswer_add = mCommunityAnswerView.findViewById(R.id.communityanswer_add);
             communityanswer_add.setOnClickListener(v->{
-                CommunityAnswerAddInit();
+                CommunityAnswerAddInit(true);
             });
         }
         communityanswer_layout_main.addView(mCommunityAnswerView);
         LinearLayout communityanswer_linearlayout = mCommunityAnswerView.findViewById(R.id.communityanswer_linearlayout);
         communityanswer_linearlayout.removeAllViews();
 
-        //先查询数据库中草稿箱中是否有未完成的问答
         //测试数据
         {
             View view = LayoutInflater.from(mControlMainActivity).inflate(R.layout.model_communityanswer_child, null);
@@ -538,7 +539,7 @@ public class ModelCommunityAnswer extends Fragment{
         }
     }
 
-    public void CommunityAnswerAddInit(){
+    public void CommunityAnswerAddInit(boolean m_isInit){
         if (mview == null) {
             return;
         }
@@ -696,6 +697,77 @@ public class ModelCommunityAnswer extends Fragment{
             }
         });
         communityanswer_layout_main.addView(mCommunityAnswerAddView);
+        if (m_isInit) { //如果是从社区问答主页跳转进来的 需要将所有东西初始化一下
+            mQuestionPublishTitle = false;
+            mQuestionPublishContent = false;
+            mQuestionPublishImage = false;
+            mCommunityAnswerChooseSignList.clear();
+            if (mPictureBeansList != null) {
+                mPictureBeansList.clear();
+            }
+            if (selPhotosPath != null) {
+                selPhotosPath.clear();
+                mPictureBeansList.clear();
+            }
+            //先查询数据库中草稿箱中是否有未完成的问答
+            Cursor cursor = ModelSearchRecordSQLiteOpenHelper.getReadableDatabase(mControlMainActivity).rawQuery(
+                    "select * from communityanswerdraftbox ", null);
+            while (cursor.moveToNext()) {
+                int titleIndex = cursor.getColumnIndex("title");
+                int contentIndex = cursor.getColumnIndex("content");
+                int photospathIndex = cursor.getColumnIndex("photospath");
+                int signIndex = cursor.getColumnIndex("sign");
+                String title = cursor.getString(titleIndex);
+                String content = cursor.getString(contentIndex);
+                String photospath = cursor.getString(photospathIndex);
+                String sign = cursor.getString(signIndex);
+                if (title != null) {
+                    communityanswer_add_layout_contentetitledittext.setText(title);
+                    if (!title.equals("")) {
+                        mQuestionPublishTitle = true;
+                    }
+                }
+                if (content != null) {
+                    communityanswer_add_layout_contentedittext.setText(content);
+                    if (!content.equals("")) {
+                        mQuestionPublishContent = true;
+                    }
+                }
+                if (photospath != null) {
+                    String photospathS[] = photospath.split(";");
+                    for (int i = 0; i < photospathS.length; i++) {
+                        if (photospathS[i].equals("")) {
+                            continue;
+                        }
+                        selPhotosPath.add(photospathS[i]);
+                    }
+                    for (String path : selPhotosPath) {
+                        ControllerPictureBean pictureBean = new ControllerPictureBean();
+                        pictureBean.setPicPath(path);
+                        pictureBean.setPicName(ControllerGlobals.getFileName(path));
+                        //去掉总数目的限制，这里通过增大MAX的数字来实现
+                        if (mPictureBeansList.size() < mPictureAdapter.MAX) {
+                            mPictureBeansList.add(pictureBean);
+                        } else {
+                            Toast.makeText(mControlMainActivity, "最多可以选择" + mPictureAdapter.MAX + "张图片", Toast.LENGTH_SHORT).show();
+                            break;
+                        }
+                    }
+                    mPictureAdapter.notifyDataSetChanged();
+                }
+                if (sign != null) {
+                    String signS[] = sign.split(";");
+                    for (int i = 0; i < signS.length; i++) {
+                        if (signS[i].equals("")) {
+                            continue;
+                        }
+                        mCommunityAnswerChooseSignList.add(signS[i]);
+                    }
+                }
+                break;
+            }
+            cursor.close();
+        }
     }
     public void CommunityAnswerPictureAdd(Intent data){
         //添加图片，发布按钮改为蓝色
@@ -771,6 +843,8 @@ public class ModelCommunityAnswer extends Fragment{
             //点击发表问答，先判断是否有选择标签，如果没有选择标签，不做处理
             if (mCommunityAnswerChooseSignList.size() != 0){
                 //发表，清空草稿箱中的文字，并返回到问答首页
+                ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(mControlMainActivity).
+                        execSQL("delete from communityanswerdraftbox");
             }
         });
         //选中的标签个数
@@ -1089,11 +1163,11 @@ public class ModelCommunityAnswer extends Fragment{
                 mMyDialog.cancel();
             });
             //获取添加图片的路径  ；分割
-            for (int i = 0; i < selPhotosPath.size() ; i ++){
-                if (i == selPhotosPath.size() - 1){
-                    photosPath = photosPath + selPhotosPath.get(i);
+            for (int i = 0; i < mPictureBeansList.size() ; i ++){
+                if (i == mPictureBeansList.size() - 1){
+                    photosPath = photosPath + mPictureBeansList.get(i).getPicPath();
                 } else {
-                    photosPath = photosPath + selPhotosPath.get(i) + ";";
+                    photosPath = photosPath + mPictureBeansList.get(i).getPicPath() + ";";
                 }
             }
             //获取标签  ；分割
@@ -1104,7 +1178,9 @@ public class ModelCommunityAnswer extends Fragment{
                     sign = sign + mCommunityAnswerChooseSignList.get(i) + ";";
                 }
             }
-            //将数据存储到本地数据库  selPhotosPath:图片路径集合；content 内容；title ：标题  mCommunityAnswerChooseSignList：标签
+            //将数据存储到本地数据库草稿箱  selPhotosPath:图片路径集合；content 内容；title ：标题  mCommunityAnswerChooseSignList：标签
+            ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(mControlMainActivity).
+                    execSQL("delete from communityanswerdraftbox");
             ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(mControlMainActivity).
                     execSQL("insert into communityanswerdraftbox(title,content,photospath,sign) values('" + title + "','" + content + "','" + photosPath + "','" + sign + "')");
         }
