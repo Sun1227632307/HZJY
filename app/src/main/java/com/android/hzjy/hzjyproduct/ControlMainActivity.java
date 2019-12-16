@@ -1739,7 +1739,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     mBeforePage = "我的";
                     Page_LogIn();
                     return true;
-                } else if (mPage.equals("忘记密码") && mBeforePage.equals("登录")) { //如果当前界面是忘记密码，点击返回按钮，应该返回到登录界面
+                } else if (mPage.equals("忘记密码") && mBeforePage.equals("登录")) { //如果当前界面是忘记密码，点击返回按钮，应该返回到登录界面.
                     mPage = "登录";
                     mBeforePage = "我的";
                     Page_LogIn();
