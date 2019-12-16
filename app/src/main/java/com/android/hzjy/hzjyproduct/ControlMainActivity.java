@@ -66,7 +66,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
     private String mPage = "";
     private String mBeforePage = "";
     private ControlMainActivity mThis;
-    private String mSMSCode = ""; //验证码
+    private String mSMSCode = ""; //验证码test
     private UserInfo mUserInfo = new UserInfo();
     private BottomNavigationView mBottomNavigationView;
 //    private String[] permissions = {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
