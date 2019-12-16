@@ -99,12 +99,6 @@ public class ModelCoursePacketCover implements View.OnClickListener  ,ModelOrder
     public void CoursePacketListInit(CoursePacketInfo coursePacketInfo){
         ControllerCustomRoundAngleImageView imageView = mListView.findViewById(R.id.coursepacketcover);
         imageView.setImageDrawable(mControlMainActivity.getResources().getDrawable(R.drawable.modelcoursepacketcover));//如果没有url，加载默认图片
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) imageView.getLayoutParams();
-        lp.leftMargin = width / 50;
-        lp.rightMargin = width / 50;
-        lp.topMargin = width / 25;
-        lp.height = height / 4;
-        imageView.setLayoutParams(lp);
         if (coursePacketInfo.mCoursePacketCover != null){
             Glide.with(mControlMainActivity).
                     load(coursePacketInfo.mCoursePacketCover).listener(new RequestListener<Drawable>() {
@@ -122,33 +116,22 @@ public class ModelCoursePacketCover implements View.OnClickListener  ,ModelOrder
                     .error(mControlMainActivity.getResources().getDrawable(R.drawable.modelcoursepacketcover)).into(imageView);
         }
         TextView coursePacketNameTextView = mListView.findViewById(R.id.coursepacketName);
-        lp = (RelativeLayout.LayoutParams) coursePacketNameTextView.getLayoutParams();
-        lp.leftMargin = width / 25;
-        coursePacketNameTextView.setLayoutParams(lp);
         if (coursePacketInfo.mCoursePacketName != null) {
             coursePacketNameTextView.setText(coursePacketInfo.mCoursePacketName);
         }
         TextView coursepacketcontentTextView = mListView.findViewById(R.id.coursepacketcontent);
-        lp = (RelativeLayout.LayoutParams) coursepacketcontentTextView.getLayoutParams();
-        lp.leftMargin = width / 25;
-        lp.topMargin = width / 50;
-        coursepacketcontentTextView.setLayoutParams(lp);
         String content = "";
         if (coursePacketInfo.mCoursePacketStageNum != null) {
             content = "阶段" + coursePacketInfo.mCoursePacketStageNum;
         }
         if (coursePacketInfo.mCoursePacketCourseNum != null){
-            content = content + " • 课程" + coursePacketInfo.mCoursePacketCourseNum;
+            content = content + "  •  课程" + coursePacketInfo.mCoursePacketCourseNum;
         }
         if (coursePacketInfo.mCoursePacketLearnPersonNum != null){
-            content = content + " • " + coursePacketInfo.mCoursePacketLearnPersonNum+ "人已学习";
+            content = content + "  •  " + coursePacketInfo.mCoursePacketLearnPersonNum+ "人已学习";
         }
         coursepacketcontentTextView.setText(content);
         TextView coursepacketpriceTextView = mListView.findViewById(R.id.coursepacketprice);
-        lp = (RelativeLayout.LayoutParams) coursepacketpriceTextView.getLayoutParams();
-        lp.rightMargin = width / 25;
-        lp.topMargin = width / 50;
-        coursepacketpriceTextView.setLayoutParams(lp);
         if (coursePacketInfo.mCoursePacketPrice != null) {
             if (!coursePacketInfo.mCoursePacketPrice.equals("免费")){
                 coursepacketpriceTextView.setTextColor(Color.RED);
@@ -158,10 +141,6 @@ public class ModelCoursePacketCover implements View.OnClickListener  ,ModelOrder
             }
         }
         TextView coursepacketpriceoldTextView = mListView.findViewById(R.id.coursepacketpriceOld);
-        lp = (RelativeLayout.LayoutParams) coursepacketpriceoldTextView.getLayoutParams();
-        lp.rightMargin = width / 25;
-        lp.topMargin = width / 50;
-        coursepacketpriceoldTextView.setLayoutParams(lp);
         //文字栅格化
         coursepacketpriceoldTextView.setPaintFlags(coursepacketpriceoldTextView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG );
         if (coursePacketInfo.mCoursePacketPriceOld != null) {

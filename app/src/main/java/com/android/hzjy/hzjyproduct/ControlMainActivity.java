@@ -965,6 +965,13 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         }
     }
 
+    //点击课程包主界面条件查询按钮
+    public void onCoursePacketMainSearchCondition(View view) {
+        if (mModelCoursePacket != null){
+            ((ModelCoursePacket)mModelCoursePacket).CoursePacketMainSearchConditionShow();
+        }
+    }
+
     //点击课程主界面的返回按钮
     public void onClickCourseMainReturn(View view){
         Page_HomePage();

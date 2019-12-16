@@ -1,13 +1,15 @@
 package com.android.hzjy.hzjyproduct;
 import android.app.Fragment;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -18,7 +20,6 @@ import in.srain.cube.views.ptr.PtrDefaultHandler;
 import in.srain.cube.views.ptr.PtrFrameLayout;
 import in.srain.cube.views.ptr.PtrHandler;
 
-import static com.android.hzjy.hzjyproduct.R.layout.modelcoursepacketlist_layout;
 
 public class ModelCoursePacket extends Fragment implements ModelCoursePacketCover.ModelCoursePacketCoverOnClickListener{
     private static ControlMainActivity mControlMainActivity;
@@ -29,6 +30,20 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
     private int height = 1344;
     private int width = 720;
     private ModelSearchView searchView = null;
+    //弹出窗口（筛选条件）
+    private PopupWindow popupWindow;
+    //一级搜索
+    private String mCoursePacketSelectTemp = "-1";
+    private String mCoursePacketSelect = "-1";
+    //二级搜索
+    private String mCoursePacketSelectTemp1 = "-1";
+    private String mCoursePacketSelect1 = "-1";
+    //排序方式搜索
+    private String mCoursePacketSelectSortTemp = "-1";
+    private String mCoursePacketSelectSort = "-1";
+    //课程类型搜索
+    private String mCoursePacketSelectCourseTypeTemp = "-1";
+    private String mCoursePacketSelectCourseType = "-1";
 
     public  static Fragment newInstance(ControlMainActivity content, String context, int iFragmentPage){
         mContext = context;
@@ -43,8 +58,6 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
         DisplayMetrics dm = mControlMainActivity.getResources().getDisplayMetrics(); //获取屏幕分辨率
         height = dm.heightPixels;
         width = dm.widthPixels;
-        CoursePacketMainInit();
-        CoursePacketSearchInit();
         if (mContext.equals("课程包:")) {
             CoursePacketMainShow(1);
         } else {
@@ -62,25 +75,10 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
         searchView.setOnClickBack(()->{
             mControlMainActivity.Page_MoreCoursePacket();
         });
-        ModelDropDownMenu dropDownMenu = mView.findViewById(R.id.dropDownMenu);
-        ModelSoftRadioGroup radiogroup =  mView.findViewById(R.id.radiogroup);
-        radiogroup.setOnCheckedChangeListener((group, checkedId, orientation) -> {
-            switch (checkedId){
-                case R.id.softradiobutton0:
-                    if (orientation){
-                        dropDownMenu.open();
-                    }
-                    break;
-                default:
-                    break;
-            }
-        });
-        TextView softradiobutton0 =  mView.findViewById(R.id.softradiobutton0);
-        softradiobutton0.setOnClickListener(v ->{dropDownMenu.open();});
         ModelPtrFrameLayout coursepacket_store_house_ptr_frame = mView.findViewById(R.id.coursepacket_store_house_ptr_frame);
-        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) coursepacket_store_house_ptr_frame.getLayoutParams();
-        lp.topMargin = width / 10;
-        coursepacket_store_house_ptr_frame.setLayoutParams(lp);
+//        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) coursepacket_store_house_ptr_frame.getLayoutParams();
+//        lp.topMargin = width / 10;
+//        coursepacket_store_house_ptr_frame.setLayoutParams(lp);
         PtrClassicDefaultHeader header = new PtrClassicDefaultHeader(mControlMainActivity);
         coursepacket_store_house_ptr_frame.addPtrUIHandler(header);
         coursepacket_store_house_ptr_frame.setHeaderView(header);
@@ -109,10 +107,6 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
             return;
         }
         //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
         HideAllLayout();
         RelativeLayout coursepacket_mainLayout = mView.findViewById(R.id.coursepacket_mainLayout);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) coursepacket_mainLayout.getLayoutParams();
@@ -126,36 +120,18 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
             mContext = "课程包:首页";
             coursepacket_titleRelativeLayout.setVisibility(View.VISIBLE);
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout.getLayoutParams();
-            lp.topMargin = leftMargin;
-            lp.leftMargin = leftMargin;
-            lp.rightMargin = leftMargin;
-//            lp.bottomMargin = bottomMargin;
-            lp.height = layoutheight;
+            lp.height = (int) mView.getResources().getDimension(R.dimen.dp44);
             coursepacket_titleRelativeLayout.setLayoutParams(lp);
-//            coursepacket_titleRelativeLayout1.setVisibility(View.INVISIBLE);
             lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout1.getLayoutParams();
             lp.topMargin = 0;
-//            lp.leftMargin = 0;
-//            lp.rightMargin = 0;
-//            lp.bottomMargin = 0;
-//            lp.height = 0;
             coursepacket_titleRelativeLayout1.setLayoutParams(lp);
         } else {
             mContext = "课程包:";
-//            coursepacket_titleRelativeLayout1.setVisibility(View.VISIBLE);
             RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout1.getLayoutParams();
-            lp.topMargin = leftMargin;
-//            lp.leftMargin = leftMargin;
-//            lp.rightMargin = leftMargin;
-//            lp.bottomMargin = bottomMargin;
-//            lp.height = layoutheight;
+            lp.height = (int) mView.getResources().getDimension(R.dimen.dp44);
             coursepacket_titleRelativeLayout1.setLayoutParams(lp);
             coursepacket_titleRelativeLayout.setVisibility(View.INVISIBLE);
             lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout.getLayoutParams();
-            lp.topMargin = 0;
-            lp.leftMargin = 0;
-            lp.rightMargin = 0;
-            lp.bottomMargin = 0;
             lp.height = 0;
             coursepacket_titleRelativeLayout.setLayoutParams(lp);
         }
@@ -285,6 +261,7 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
         CoursePacketInfoList.add(CoursePacketInfo3);
         LinearLayout coursepacket_linearlayout = mView.findViewById(R.id.coursepacket_linearlayout);
         coursepacket_linearlayout.removeAllViews();
+        View line = null;
         for (int i = 0; i < CoursePacketInfoList.size(); i ++){
             CoursePacketInfo CoursePacketInfo = CoursePacketInfoList.get(i);
             if (CoursePacketInfo == null){
@@ -294,13 +271,10 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
             modelCoursePacketCover.ModelCoursePacketCoverOnClickListenerSet(this);
             View modelCoursePacketView = modelCoursePacketCover.ModelCoursePacketCover(mControlMainActivity,CoursePacketInfo);
             coursepacket_linearlayout.addView(modelCoursePacketView);
-            if (i == CoursePacketInfoList.size() - 1){
-                View view = new View(mControlMainActivity);
-                coursepacket_linearlayout.addView(view);
-                LinearLayout.LayoutParams viewLp = (LinearLayout.LayoutParams) view.getLayoutParams();
-                viewLp.height = height / 11;
-                view.setLayoutParams(viewLp);
-            }
+            line = modelCoursePacketView.findViewById(R.id.coursepacket_line1);
+        }
+        if (line != null){
+            line.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -315,6 +289,10 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
         LP.height = LinearLayout.LayoutParams.MATCH_PARENT;
         coursepacket_searchlayout.setLayoutParams(LP);
         coursepacket_searchlayout.setVisibility(View.VISIBLE);
+    }
+
+    public void CoursePacketMainSearchConditionShow() {
+        initPopupWindow();
     }
 
     //隐藏所有图层
@@ -339,94 +317,514 @@ public class ModelCoursePacket extends Fragment implements ModelCoursePacketCove
         coursepacket_details1.setVisibility(View.INVISIBLE);
     }
 
-    //初始化课程包主界面
-    public void CoursePacketMainInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-//        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout coursepacket_titleRelativeLayout = mView.findViewById(R.id.coursepacket_titleRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = leftMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        coursepacket_titleRelativeLayout.setLayoutParams(lp);
-        RelativeLayout coursepacket_titleRelativeLayout1 = mView.findViewById(R.id.coursepacket_titleRelativeLayout1);
-        lp = (RelativeLayout.LayoutParams) coursepacket_titleRelativeLayout1.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = leftMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        coursepacket_titleRelativeLayout1.setLayoutParams(lp);
-        //返回
-        ImageView coursepacket_title_return = mView.findViewById(R.id.coursepacket_title_return);
-        lp = (RelativeLayout.LayoutParams) coursepacket_title_return.getLayoutParams();
-        lp.height = width / 15;
-        lp.width = width / 15;
-        coursepacket_title_return.setLayoutParams(lp);
-        //查询
-//        ImageView coursepacket_title_search = mview.findViewById(R.id.coursepacket_title_search);
-//        lp = (RelativeLayout.LayoutParams) coursepacket_title_search.getLayoutParams();
-//        lp.height = width / 15;
-//        lp.width = width / 15;
-//        coursepacket_title_search.setLayoutParams(lp);
-        ImageView coursepacket_title_search1 = mView.findViewById(R.id.coursepacket_title_search1);
-        lp = (RelativeLayout.LayoutParams) coursepacket_title_search1.getLayoutParams();
-        lp.height = width / 15;
-        lp.width = width / 15;
-        lp.leftMargin = width / 50;
-        lp.rightMargin = leftMargin;
-        coursepacket_title_search1.setLayoutParams(lp);
-        //功能列表
-        ModelSoftRadioGroup radiogroup = mView.findViewById(R.id.radiogroup);
-        lp = (RelativeLayout.LayoutParams) radiogroup.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = leftMargin;
-        lp.height = layoutheight;
-        radiogroup.setLayoutParams(lp);
-        //项目
-        TextView softradiobutton0 = mView.findViewById(R.id.softradiobutton0);
-        LinearLayout.LayoutParams LinearLayoutLp = (LinearLayout.LayoutParams) softradiobutton0.getLayoutParams();
-        LinearLayoutLp.width = (width - leftMargin * 2) / 4;
-        softradiobutton0.setLayoutParams(LinearLayoutLp);
-        //时间排序
-        ModelSoftRadioButton softradiobutton1 = mView.findViewById(R.id.softradiobutton1);
-        LinearLayoutLp = (LinearLayout.LayoutParams) softradiobutton1.getLayoutParams();
-        LinearLayoutLp.width = (width - leftMargin * 2) / 4;
-        softradiobutton1.setLayoutParams(LinearLayoutLp);
-        //热度排序
-        ModelSoftRadioButton softradiobutton2 = mView.findViewById(R.id.softradiobutton2);
-        LinearLayoutLp = (LinearLayout.LayoutParams) softradiobutton2.getLayoutParams();
-        LinearLayoutLp.width = (width - leftMargin * 2) / 4;
-        softradiobutton2.setLayoutParams(LinearLayoutLp);
-        //重置搜索条件
-        TextView softradiobutton3 = mView.findViewById(R.id.softradiobutton3);
-        LinearLayoutLp = (LinearLayout.LayoutParams) softradiobutton3.getLayoutParams();
-        LinearLayoutLp.width = (width - leftMargin * 2) / 4;
-        softradiobutton3.setLayoutParams(LinearLayoutLp);
+    /**
+       * 添加新笔记时弹出的popWin关闭的事件，主要是为了将背景透明度改回来
+       *
+       */
+    class popupDismissListener implements PopupWindow.OnDismissListener{
+        @Override
+        public void onDismiss() {
+            backgroundAlpha(1f);
+        }
+    }
+    protected void initPopupWindow() {
+        View popupWindowView = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop, null);
+        int height1 = (int) (getScreenHeight() - mView.getResources().getDimension(R.dimen.dp45) - getStateBar());
+        //内容，高度，宽度
+        popupWindow = new PopupWindow(popupWindowView, (int) mView.getResources().getDimension(R.dimen.dp_280), height1, true);
+        //动画效果
+        popupWindow.setAnimationStyle(R.style.AnimationRightFade);
+        //菜单背景色
+        ColorDrawable dw = new ColorDrawable(0xffffffff);
+        popupWindow.setBackgroundDrawable(dw);
+        popupWindow.showAtLocation(mControlMainActivity.getLayoutInflater().inflate(R.layout.activity_main, null), Gravity.RIGHT, 0, 500);
+        popupWindow.setBackgroundDrawable(null);
+        //设置背景半透明
+        backgroundAlpha(0.9f);
+        //关闭事件
+        popupWindow.setOnDismissListener(new popupDismissListener());
+        popupWindowView.setOnTouchListener((v, event) -> {
+            // 这里如果返回true的话，touch事件将被拦截
+            // 拦截后 PopupWindow的onTouchEvent不被调用，这样点击外部区域无法dismiss
+            return false;
+        });
+        //添加一级搜索标签
+        ControllerWarpLinearLayout coursepacket_select_warpLinearLayout1 = popupWindowView.findViewById(R.id.coursepacket_select_warpLinearLayout1);
+        coursepacket_select_warpLinearLayout1.removeAllViews();
+        //添加二级搜索标签
+        ControllerWarpLinearLayout coursepacket_select_warpLinearLayout2 = popupWindowView.findViewById(R.id.coursepacket_select_warpLinearLayout2);
+        coursepacket_select_warpLinearLayout2.removeAllViews();
+        mCoursePacketSelectTemp1 = mCoursePacketSelect1;
+        mCoursePacketSelectTemp = mCoursePacketSelect;
+        //必须有的标签-全部:默认选中全部
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("全部");
+            coursepacket_selectpop_child_signname.setHint("-1");
+            coursepacket_select_warpLinearLayout1.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout1.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout1.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectTemp = hint;
+            });
+            if (mCoursePacketSelect.equals("-1")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //测试数据
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("技术基础实务");
+            coursepacket_select_warpLinearLayout1.addView(view);
+            coursepacket_selectpop_child_signname.setHint("1");
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout1.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout1.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectTemp = hint;
+            });
+            if (mCoursePacketSelect.equals(coursepacket_selectpop_child_signname.getHint().toString())) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_select_warpLinearLayout1.addView(view);
+            coursepacket_selectpop_child_signname.setHint("2");
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout1.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout1.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    int padding = (int) view.getResources().getDimension(R.dimen.dp5);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                        coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectTemp = hint;
+            });
+            if (mCoursePacketSelect.equals(coursepacket_selectpop_child_signname.getHint().toString())) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //添加排序方式搜索标签
+        ControllerWarpLinearLayout coursepacket_select_warpLinearLayout3 = popupWindowView.findViewById(R.id.coursepacket_select_warpLinearLayout3);
+        coursepacket_select_warpLinearLayout3.removeAllViews();
+        mCoursePacketSelectSortTemp = mCoursePacketSelectSort;
+        //必须有的标签-综合:默认选中综合
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("综合");
+            coursepacket_selectpop_child_signname.setHint("-1");
+            coursepacket_select_warpLinearLayout3.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout3.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout3.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectSortTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectSortTemp = hint;
+            });
+            if (mCoursePacketSelectSort.equals("-1")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //必须有的标签-按热度
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("按热度");
+            coursepacket_selectpop_child_signname.setHint("0");
+            coursepacket_select_warpLinearLayout3.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout3.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout3.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectSortTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectSortTemp = hint;
+            });
+            if (mCoursePacketSelectSort.equals("0")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //必须有的标签-按时间
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("按时间");
+            coursepacket_selectpop_child_signname.setHint("1");
+            coursepacket_select_warpLinearLayout3.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout3.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout3.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectSortTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectSortTemp = hint;
+            });
+            if (mCoursePacketSelectSort.equals("1")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //添加课程类型搜索标签
+        ControllerWarpLinearLayout coursepacket_select_warpLinearLayout4 = popupWindowView.findViewById(R.id.coursepacket_select_warpLinearLayout4);
+        coursepacket_select_warpLinearLayout4.removeAllViews();
+        mCoursePacketSelectCourseTypeTemp = mCoursePacketSelectCourseType;
+        //必须有的标签-综合:默认选中综合
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("综合");
+            coursepacket_selectpop_child_signname.setHint("-1");
+            coursepacket_select_warpLinearLayout4.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout4.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout4.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectCourseTypeTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectCourseTypeTemp = hint;
+            });
+            if (mCoursePacketSelectCourseType.equals("-1")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //必须有的标签-直播
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("直播");
+            coursepacket_selectpop_child_signname.setHint("0");
+            coursepacket_select_warpLinearLayout4.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout4.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout4.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectCourseTypeTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectCourseTypeTemp = hint;
+            });
+            if (mCoursePacketSelectCourseType.equals("0")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //必须有的标签-录播
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("录播");
+            coursepacket_selectpop_child_signname.setHint("1");
+            coursepacket_select_warpLinearLayout4.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout4.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout4.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectCourseTypeTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectCourseTypeTemp = hint;
+            });
+            if (mCoursePacketSelectCourseType.equals("1")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //必须有的标签-混合
+        {
+            View view = mControlMainActivity.getLayoutInflater().inflate(R.layout.model_coursepacket_selectpop_child, null);
+            TextView coursepacket_selectpop_child_signname = view.findViewById(R.id.coursepacket_selectpop_child_signname);
+            coursepacket_selectpop_child_signname.setText("混合");
+            coursepacket_selectpop_child_signname.setHint("2");
+            coursepacket_select_warpLinearLayout4.addView(view);
+            view.setOnClickListener(v->{
+                //将其他置为未选中
+                String hint = "";
+                int childcount = coursepacket_select_warpLinearLayout4.getChildCount();
+                for (int i = 0; i < childcount ; i ++){
+                    View childView = coursepacket_select_warpLinearLayout4.getChildAt(i);
+                    if (childView == null){
+                        continue;
+                    }
+                    TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                    if (childView == view){
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.white));
+                        hint = coursepacket_selectpop_child_signname1.getHint().toString();
+                    } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectCourseTypeTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                        coursepacket_selectpop_child_signname1.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect));
+                        coursepacket_selectpop_child_signname1.setTextColor(view.getResources().getColor(R.color.grayff999999));
+                    }
+                }
+                //将选中项置为当前选中项id
+                mCoursePacketSelectCourseTypeTemp = hint;
+            });
+            if (mCoursePacketSelectCourseType.equals("2")) {
+                coursepacket_selectpop_child_signname.setBackground(view.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                coursepacket_selectpop_child_signname.setTextColor(view.getResources().getColor(R.color.white));
+            }
+        }
+        //点击确定
+        TextView communityanswer_select_buttonsure = popupWindowView.findViewById(R.id.coursepacket_select_buttonsure);
+        communityanswer_select_buttonsure.setOnClickListener(v->{
+            mCoursePacketSelect = mCoursePacketSelectTemp;
+            mCoursePacketSelect1 = mCoursePacketSelectTemp1;
+            mCoursePacketSelectSort = mCoursePacketSelectSortTemp;
+            mCoursePacketSelectCourseType = mCoursePacketSelectCourseTypeTemp;
+            popupWindow.dismiss();
+        });
+        //点击重置
+        TextView communityanswer_select_buttonreset = popupWindowView.findViewById(R.id.coursepacket_select_buttonreset);
+        communityanswer_select_buttonreset.setOnClickListener(v->{
+            //将其他置为未选中
+            int childcount = coursepacket_select_warpLinearLayout1.getChildCount();
+            for (int i = 0; i < childcount ; i ++){
+                View childView = coursepacket_select_warpLinearLayout1.getChildAt(i);
+                if (childView == null){
+                    continue;
+                }
+                TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                int padding = (int) childView.getResources().getDimension(R.dimen.dp5);
+                if (coursepacket_selectpop_child_signname1.getHint().toString().equals("-1")){
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.white));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.grayff999999));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                }
+            }
+            mCoursePacketSelectTemp = "-1";
+            mCoursePacketSelect = "-1";
+            childcount = coursepacket_select_warpLinearLayout3.getChildCount();
+            for (int i = 0; i < childcount ; i ++){
+                View childView = coursepacket_select_warpLinearLayout3.getChildAt(i);
+                if (childView == null){
+                    continue;
+                }
+                TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                int padding = (int) childView.getResources().getDimension(R.dimen.dp5);
+                if (coursepacket_selectpop_child_signname1.getHint().toString().equals("-1")){
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.white));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectSortTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.grayff999999));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                }
+            }
+            mCoursePacketSelectSortTemp = "-1";
+            mCoursePacketSelectSort = "-1";
+            childcount = coursepacket_select_warpLinearLayout4.getChildCount();
+            for (int i = 0; i < childcount ; i ++){
+                View childView = coursepacket_select_warpLinearLayout4.getChildAt(i);
+                if (childView == null){
+                    continue;
+                }
+                TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                int padding = (int) childView.getResources().getDimension(R.dimen.dp5);
+                if (coursepacket_selectpop_child_signname1.getHint().toString().equals("-1")){
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.white));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectCourseTypeTemp)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.grayff999999));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                }
+            }
+            mCoursePacketSelectCourseTypeTemp = "-1";
+            mCoursePacketSelectCourseType = "-1";
+            childcount = coursepacket_select_warpLinearLayout2.getChildCount();
+            for (int i = 0; i < childcount ; i ++){
+                View childView = coursepacket_select_warpLinearLayout2.getChildAt(i);
+                if (childView == null){
+                    continue;
+                }
+                TextView coursepacket_selectpop_child_signname1 = childView.findViewById(R.id.coursepacket_selectpop_child_signname);
+                int padding = (int) childView.getResources().getDimension(R.dimen.dp5);
+                if (coursepacket_selectpop_child_signname1.getHint().toString().equals("-1")){
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect_blue));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.white));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                } else if (coursepacket_selectpop_child_signname1.getHint().toString().equals(mCoursePacketSelectTemp1)){ // 如果上个找到上一个选中的id，将其置为未选状态
+                    coursepacket_selectpop_child_signname1.setBackground(childView.getResources().getDrawable(R.drawable.textview_style_rect));
+                    coursepacket_selectpop_child_signname1.setTextColor(childView.getResources().getColor(R.color.grayff999999));
+                    coursepacket_selectpop_child_signname1.setPadding(padding,padding,padding,padding);
+                }
+            }
+            mCoursePacketSelectTemp1 = "-1";
+            mCoursePacketSelect = "-1";
+        });
+    }
+    /**
+       * 设置添加屏幕的背景透明度
+       * @param bgAlpha
+       */
+    public void backgroundAlpha(float bgAlpha)
+    {
+        WindowManager.LayoutParams lp = mControlMainActivity.getWindow().getAttributes();
+        lp.alpha = bgAlpha; //0.0-1.0
+        mControlMainActivity.getWindow().setAttributes(lp);
     }
 
-    //初始化课程包-搜索界面
-    public void CoursePacketSearchInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-//        ModelSearchView search_view = mview.findViewById(R.id.search_view);
-//        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) search_view.getLayoutParams();
-//        lp.topMargin = leftMargin;
-//        lp.leftMargin = leftMargin;
-//        lp.rightMargin = leftMargin;
-//        lp.bottomMargin = bottomMargin;
-//        lp.height = layoutheight;
-//        search_view.setLayoutParams(lp);
+    //获取屏幕高度 不包含虚拟按键=
+    public static int getScreenHeight() {
+        DisplayMetrics dm = mControlMainActivity.getResources().getDisplayMetrics();
+        return dm.heightPixels;
     }
 
+    private int getStateBar(){
+        int result = 0;
+        int resourceId = this.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = this.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
     @Override
     public void OnClickListener(View view) {
         HideAllLayout();

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout android:layout_width="@dimen/dp280"
+<RelativeLayout android:layout_width="@dimen/dp_300"
     android:layout_height="wrap_content"
     android:visibility="visible"
     android:id="@+id/course_mainLayout"
