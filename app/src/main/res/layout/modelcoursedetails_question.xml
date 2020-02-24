@@ -44,14 +44,63 @@
         android:background="#e5e5e5"
         android:layout_marginBottom="@dimen/dp5"
         android:layout_below="@id/course_question_layout_title"/>
-    <ScrollView
+    <com.scwang.smartrefresh.layout.SmartRefreshLayout
+        android:id="@+id/course_question_layout_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/course_question_layout_line1">
-        <LinearLayout
-            android:id="@+id/course_question_layout_content"
+
+        <com.scwang.smartrefresh.header.BezierCircleHeader
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"/>
-    </ScrollView>
+            android:layout_height="wrap_content" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/course_question_layout_line1">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:id="@+id/course_question_layout_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"/>
+                    <LinearLayout
+                        android:id="@+id/course_question_end"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="@dimen/dp15"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:visibility="invisible"
+                        android:layout_marginBottom="@dimen/dp_80">
+                        <View
+                            android:layout_width="@dimen/dp_36"
+                            android:layout_height="@dimen/dp1"
+                            android:background="#e5e5e5"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="已显示全部内容"
+                            android:textSize="@dimen/textsize13"
+                            android:textColor="#cc999999"
+                            android:layout_marginLeft="@dimen/dp10"
+                            android:layout_marginRight="@dimen/dp10"/>
+                        <View
+                            android:layout_width="@dimen/dp_36"
+                            android:layout_height="@dimen/dp1"
+                            android:background="#e5e5e5"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+        <com.scwang.smartrefresh.layout.footer.FalsifyFooter
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </com.scwang.smartrefresh.layout.SmartRefreshLayout>
 </RelativeLayout>

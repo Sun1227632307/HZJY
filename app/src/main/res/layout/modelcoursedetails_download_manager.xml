@@ -51,7 +51,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/course_downloadmanager_layout_line1"
-        android:layout_above="@id/course_downloadmanager_bottomfunction_layout">
+        android:layout_above="@+id/course_downloadmanager_bottomfunction_layout">
         <LinearLayout
             android:id="@+id/course_downloadmanager_layout_content"
             android:layout_width="match_parent"

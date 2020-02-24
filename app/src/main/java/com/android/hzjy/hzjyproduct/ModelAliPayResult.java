@@ -4,7 +4,9 @@ import android.text.TextUtils;
 
 import java.util.Map;
 
-public class ModelAliPayResult {
+public class
+
+ModelAliPayResult {
     private String resultStatus;
     private String result;
     private String memo;

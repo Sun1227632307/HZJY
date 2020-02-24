@@ -30,8 +30,8 @@
             android:textColor="#565555"
             android:singleLine="true"
             android:ellipsize="end"
-            android:maxLength="12"
-            android:numeric="integer"
+            android:maxLength="24"
+            android:text="QcfwGLUZ8kX3RQl5"
             android:theme="@style/MyEditText"
             android:textSize="@dimen/textsize17" />
 

@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="@dimen/dp13"
         android:layout_marginRight="@dimen/dp13"
-        android:layout_above="@id/coursepacket_select_buttonlayout">
+        android:layout_above="@+id/coursepacket_select_buttonlayout">
         <com.android.hzjy.hzjyproduct.ModelPtrFrameLayout
             android:id="@+id/coursepacket_select_ptr_frame"
             xmlns:cube_ptr="http://schemas.android.com/apk/res-auto"
@@ -83,24 +83,6 @@
                         app:horizontal_Space="10dp"
                         app:isFull="false"
                         app:vertical_Space="10dp"/>
-                    <TextView
-                        android:id="@+id/coursepacket_select_signtitle4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="课程类型"
-                        android:textColor="#333333"
-                        android:layout_marginLeft="@dimen/dp10"
-                        android:layout_marginTop="@dimen/dp45"
-                        android:textSize="@dimen/textsize17"/>
-                    <com.android.hzjy.hzjyproduct.ControllerWarpLinearLayout
-                        android:id="@+id/coursepacket_select_warpLinearLayout4"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="10dp"
-                        app:grivate="left"
-                        app:horizontal_Space="10dp"
-                        app:isFull="false"
-                        app:vertical_Space="10dp"/>
                 </LinearLayout>
             </ScrollView>
         </com.android.hzjy.hzjyproduct.ModelPtrFrameLayout>
@@ -111,7 +93,7 @@
         android:layout_height="@dimen/dp1"
         android:layout_gravity="center_horizontal"
         android:background="#e5e5e5"
-        android:layout_above="@id/coursepacket_select_buttonlayout"/>
+        android:layout_above="@+id/coursepacket_select_buttonlayout"/>
     <LinearLayout
         android:id="@+id/coursepacket_select_buttonlayout"
         android:layout_width="match_parent"

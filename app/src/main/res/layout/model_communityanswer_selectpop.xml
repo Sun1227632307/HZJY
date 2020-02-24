@@ -20,7 +20,7 @@
         android:layout_marginLeft="@dimen/dp13"
         android:layout_marginRight="@dimen/dp13"
         android:layout_below="@id/communityanswer_select_signtitle"
-        android:layout_above="@id/communityanswer_select_buttonlayout">
+        android:layout_above="@+id/communityanswer_select_buttonlayout">
         <com.android.hzjy.hzjyproduct.ModelPtrFrameLayout
             android:id="@+id/communityanswer_select_ptr_frame"
             xmlns:cube_ptr="http://schemas.android.com/apk/res-auto"
@@ -54,7 +54,7 @@
         android:layout_height="@dimen/dp1"
         android:layout_gravity="center_horizontal"
         android:background="#e5e5e5"
-        android:layout_above="@id/communityanswer_select_buttonlayout"/>
+        android:layout_above="@+id/communityanswer_select_buttonlayout"/>
     <LinearLayout
         android:id="@+id/communityanswer_select_buttonlayout"
         android:layout_width="match_parent"

@@ -43,6 +43,29 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.google.gson.Gson;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import androidx.navigation.ui.NavigationUI;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ModelSetting extends Fragment {
     private static ControlMainActivity mControlMainActivity;
@@ -51,26 +74,17 @@ public class ModelSetting extends Fragment {
     static private int FragmentPage;
     private View mview ;
     private int width = 1024;
-    static private UserInfo mUserInfo = new UserInfo();
     private Dialog mCameraDialog = null;
     private static String mContext = "";
     //设置密码是否可见，默认为不可见
     private boolean mOldPasswordIsOpenEye = false;
     private boolean mNewPasswordIsOpenEye = false;
     private boolean mNewAgainPasswordIsOpenEye = false;
+    //个人信息返回数据
+    private PersonalInfoBean.PersonalInfoDataBean mPersonalInfoDataBean;
 
-    public  static Fragment newInstance(ControlMainActivity content, String context, int iFragmentPage,UserInfo userInfo){
+    public  static Fragment newInstance(ControlMainActivity content, String context, int iFragmentPage){
         mContext = context;
-        if (userInfo != null) {
-            mUserInfo.mUserHeadUrl = userInfo.mUserHeadUrl;
-            mUserInfo.mUserName = userInfo.mUserName;
-            mUserInfo.mUserLoginState = userInfo.mUserLoginState;
-            mUserInfo.mUserIntroduce = userInfo.mUserIntroduce;
-            mUserInfo.mUserId = userInfo.mUserId;
-            mUserInfo.mUserEmail = userInfo.mUserEmail;
-            mUserInfo.mUserTeleNum = userInfo.mUserTeleNum;
-            mUserInfo.mUserIdNum = userInfo.mUserIdNum;
-        }
         mControlMainActivity = content;
         ModelSetting myFragment = new ModelSetting();
         FragmentPage = iFragmentPage;
@@ -83,8 +97,8 @@ public class ModelSetting extends Fragment {
         DisplayMetrics dm = mControlMainActivity.getResources().getDisplayMetrics(); //获取屏幕分辨率
 //        height = dm.heightPixels;
         width = dm.widthPixels;
+        getPersonalInfoDatas();
         SettingMainInit();
-        SettingBaseInfoMainInit();
         SetttingButtonDialogInit();
         SettingPersonalStatementUpdateInit();
         SettingUserNameUpdateInit();
@@ -101,19 +115,17 @@ public class ModelSetting extends Fragment {
             LP.height = LinearLayout.LayoutParams.MATCH_PARENT;
             setting_main.setLayoutParams(LP);
             setting_main.setVisibility(View.VISIBLE);
-            Button setting_logout_button = mview.findViewById(R.id.setting_logout_button);
+            TextView setting_logout_button = mview.findViewById(R.id.setting_logout_button);
             setting_logout_button.setVisibility(View.VISIBLE);
             TextView setting_essentialinformation_textview = mview.findViewById(R.id.setting_essentialinformation_textview);
             setting_essentialinformation_textview.setText(R.string.title_essentialinformation);
-            if (mUserInfo.mUserLoginState.equals("0")) {
+            if (mControlMainActivity.mStuId.equals("")) {
                 //没登录不显示退出登录按钮
                 setting_logout_button.setVisibility(View.INVISIBLE);
                 //基本信息 后面改为立即登录
                 setting_essentialinformation_textview.setText(R.string.title_loginclick);
             }
         } else if (mContext.equals("设置-基本信息")){
-            TextView setting_essentialinformation_return_text = mview.findViewById(R.id.setting_essentialinformation_return_text);
-            setting_essentialinformation_return_text.setText(R.string.title_myinfo);
             RelativeLayout setting_essentialinformation_main = mview.findViewById(R.id.setting_essentialinformation_main);
             LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_essentialinformation_main.getLayoutParams();
             LP.width = LinearLayout.LayoutParams.MATCH_PARENT;
@@ -124,6 +136,8 @@ public class ModelSetting extends Fragment {
             essentialinformation_id_value_textview.setText("");
             TextView essentialinformation_name_value_textview = mview.findViewById(R.id.essentialinformation_name_value_textview);
             essentialinformation_name_value_textview.setText("");
+            TextView essentialinformation_nick_value_textview = mview.findViewById(R.id.essentialinformation_nick_value_textview);
+            essentialinformation_nick_value_textview.setText("");
             TextView essentialinformation_sign_value_textview = mview.findViewById(R.id.essentialinformation_sign_value_textview);
             essentialinformation_sign_value_textview.setText("");
             TextView essentialinformation_email_value_textview = mview.findViewById(R.id.essentialinformation_email_value_textview);
@@ -132,19 +146,35 @@ public class ModelSetting extends Fragment {
             essentialinformation_tel_value_textview.setText("");
             TextView essentialinformation_idnumber_value_textview = mview.findViewById(R.id.essentialinformation_idnumber_value_textview);
             essentialinformation_idnumber_value_textview.setText("");
-            if (mUserInfo.mUserLoginState.equals("1")){ //登录状态
+            if (mPersonalInfoDataBean != null) { //登录状态
                 //账号 后面改为账号
-                essentialinformation_id_value_textview.setText(mUserInfo.mUserId);
+                if (mPersonalInfoDataBean.login_number != null) {
+                    essentialinformation_id_value_textview.setText(mPersonalInfoDataBean.login_number);
+                }
                 //用户名 后面改为用户名
-                essentialinformation_name_value_textview.setText(mUserInfo.mUserName);
+                if (mPersonalInfoDataBean.stu_name != null) {
+                    essentialinformation_name_value_textview.setText(mPersonalInfoDataBean.stu_name);
+                }
+                //昵称 后面改为昵称
+                if (mPersonalInfoDataBean.nickname != null) {
+                    essentialinformation_nick_value_textview.setText(mPersonalInfoDataBean.nickname);
+                }
                 //个人说明
-                essentialinformation_sign_value_textview.setText(mUserInfo.mUserIntroduce);
+                if (mPersonalInfoDataBean.autograph != null) {
+                    essentialinformation_sign_value_textview.setText(mPersonalInfoDataBean.autograph);
+                }
                 //email
-                essentialinformation_email_value_textview.setText(mUserInfo.mUserEmail);
+                if (mPersonalInfoDataBean.email != null) {
+                    essentialinformation_email_value_textview.setText(mPersonalInfoDataBean.email);
+                }
                 //电话号码
-                essentialinformation_tel_value_textview.setText(mUserInfo.mUserTeleNum);
+                if (mPersonalInfoDataBean.tel != null) {
+                    essentialinformation_tel_value_textview.setText(mPersonalInfoDataBean.tel);
+                }
                 //证件号码
-                essentialinformation_idnumber_value_textview.setText(mUserInfo.mUserIdNum);
+                if (mPersonalInfoDataBean.ID_number != null) {
+                    essentialinformation_idnumber_value_textview.setText(mPersonalInfoDataBean.ID_number);
+                }
             }
         }
         return mview;
@@ -155,14 +185,10 @@ public class ModelSetting extends Fragment {
         super.onDestroy();
     }
 
-    public void SettingMainShow(UserInfo userInfo ,int returnString){ // returnString:  0:我的
-        if (mview == null || userInfo == null){
+    public void SettingMainShow(int returnString){ // returnString:  0:我的
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserHeadUrl = userInfo.mUserHeadUrl;
-        mUserInfo.mUserName = userInfo.mUserName;
-        mUserInfo.mUserLoginState = userInfo.mUserLoginState;
-        mUserInfo.mUserIntroduce = userInfo.mUserIntroduce;
         HideAllLayout();
         RelativeLayout setting_main = mview.findViewById(R.id.setting_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_main.getLayoutParams();
@@ -170,34 +196,27 @@ public class ModelSetting extends Fragment {
         LP.height = LinearLayout.LayoutParams.MATCH_PARENT;
         setting_main.setLayoutParams(LP);
         setting_main.setVisibility(View.VISIBLE);
-        Button setting_logout_button = mview.findViewById(R.id.setting_logout_button);
+        TextView setting_logout_button = mview.findViewById(R.id.setting_logout_button);
         setting_logout_button.setVisibility(View.VISIBLE);
         TextView setting_essentialinformation_textview = mview.findViewById(R.id.setting_essentialinformation_textview);
         setting_essentialinformation_textview.setText(R.string.title_essentialinformation);
-        if (mUserInfo.mUserLoginState.equals("0")){
+        if (mControlMainActivity.mStuId.equals("")){
             //没登录不显示退出登录按钮
             setting_logout_button.setVisibility(View.INVISIBLE);
             //基本信息 后面改为立即登录
             setting_essentialinformation_textview.setText(R.string.title_loginclick);
-        }
-        if (returnString == 0) {
-            TextView setting_return_text = mview.findViewById(R.id.setting_return_text);
-            setting_return_text.setText(R.string.title_myinfo);
+        } else {
+            //没登录不显示退出登录按钮
+            setting_logout_button.setVisibility(View.VISIBLE);
+            //基本信息 后面改为立即登录
+            setting_essentialinformation_textview.setText(R.string.title_essentialinformation);
         }
     }
     //显示设置基本信息的详细界面
-    public void SettingBaseInfoMainShow(UserInfo userInfo ,int returnString){ // returnString:  0:我的  1:设置
-        if (mview == null || userInfo == null){
+    public void SettingBaseInfoMainShow(int returnString){ // returnString:  0:我的  1:设置
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserHeadUrl = userInfo.mUserHeadUrl;
-        mUserInfo.mUserName = userInfo.mUserName;
-        mUserInfo.mUserLoginState = userInfo.mUserLoginState;
-        mUserInfo.mUserIntroduce = userInfo.mUserIntroduce;
-        mUserInfo.mUserId = userInfo.mUserId;
-        mUserInfo.mUserEmail = userInfo.mUserEmail;
-        mUserInfo.mUserTeleNum = userInfo.mUserTeleNum;
-        mUserInfo.mUserIdNum = userInfo.mUserIdNum;
         HideAllLayout();
         RelativeLayout setting_essentialinformation_main = mview.findViewById(R.id.setting_essentialinformation_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_essentialinformation_main.getLayoutParams();
@@ -209,6 +228,8 @@ public class ModelSetting extends Fragment {
         essentialinformation_id_value_textview.setText("");
         TextView essentialinformation_name_value_textview = mview.findViewById(R.id.essentialinformation_name_value_textview);
         essentialinformation_name_value_textview.setText("");
+        TextView essentialinformation_nick_value_textview = mview.findViewById(R.id.essentialinformation_nick_value_textview);
+        essentialinformation_nick_value_textview.setText("");
         TextView essentialinformation_sign_value_textview = mview.findViewById(R.id.essentialinformation_sign_value_textview);
         essentialinformation_sign_value_textview.setText("");
         TextView essentialinformation_email_value_textview = mview.findViewById(R.id.essentialinformation_email_value_textview);
@@ -217,35 +238,43 @@ public class ModelSetting extends Fragment {
         essentialinformation_tel_value_textview.setText("");
         TextView essentialinformation_idnumber_value_textview = mview.findViewById(R.id.essentialinformation_idnumber_value_textview);
         essentialinformation_idnumber_value_textview.setText("");
-        if (mUserInfo.mUserLoginState.equals("1")){ //登录状态
+        if (mPersonalInfoDataBean != null){ //登录状态
             //账号 后面改为账号
-            essentialinformation_id_value_textview.setText(mUserInfo.mUserId);
+            if (mPersonalInfoDataBean.login_number != null) {
+                essentialinformation_id_value_textview.setText(mPersonalInfoDataBean.login_number);
+            }
             //用户名 后面改为用户名
-            essentialinformation_name_value_textview.setText(mUserInfo.mUserName);
+            if (mPersonalInfoDataBean.stu_name != null) {
+                essentialinformation_name_value_textview.setText(mPersonalInfoDataBean.stu_name);
+            }
+            //昵称 后面改为昵称
+            if (mPersonalInfoDataBean.nickname != null) {
+                essentialinformation_nick_value_textview.setText(mPersonalInfoDataBean.nickname);
+            }
             //个人说明
-            essentialinformation_sign_value_textview.setText(mUserInfo.mUserIntroduce);
+            if (mPersonalInfoDataBean.autograph != null) {
+                essentialinformation_sign_value_textview.setText(mPersonalInfoDataBean.autograph);
+            }
             //email
-            essentialinformation_email_value_textview.setText(mUserInfo.mUserEmail);
+            if (mPersonalInfoDataBean.email != null) {
+                essentialinformation_email_value_textview.setText(mPersonalInfoDataBean.email);
+            }
             //电话号码
-            essentialinformation_tel_value_textview.setText(mUserInfo.mUserTeleNum);
+            if (mPersonalInfoDataBean.tel != null) {
+                essentialinformation_tel_value_textview.setText(mPersonalInfoDataBean.tel);
+            }
             //证件号码
-            essentialinformation_idnumber_value_textview.setText(mUserInfo.mUserIdNum);
-        }
-        if (returnString == 0) {
-            TextView setting_essentialinformation_return_text = mview.findViewById(R.id.setting_essentialinformation_return_text);
-            setting_essentialinformation_return_text.setText(R.string.title_myinfo);
-        } else if (returnString == 1) {
-            TextView setting_essentialinformation_return_text = mview.findViewById(R.id.setting_essentialinformation_return_text);
-            setting_essentialinformation_return_text.setText(R.string.title_setting);
+            if (mPersonalInfoDataBean.ID_number != null) {
+                essentialinformation_idnumber_value_textview.setText(mPersonalInfoDataBean.ID_number);
+            }
         }
     }
 
     //显示设置基本信息的修改用户名界面
-    public void SettingUserNameUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingUserNameUpdateShow() {
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserName = userInfo.mUserName;
         HideAllLayout();
         RelativeLayout setting_usernameupdate_main = mview.findViewById(R.id.setting_usernameupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_usernameupdate_main.getLayoutParams();
@@ -253,21 +282,53 @@ public class ModelSetting extends Fragment {
         LP.height = LinearLayout.LayoutParams.MATCH_PARENT;
         setting_usernameupdate_main.setLayoutParams(LP);
         setting_usernameupdate_main.setVisibility(View.VISIBLE);
-        EditText setting_usernameupdate_deittext = mview.findViewById(R.id.setting_usernameupdate_deittext);
-        setting_usernameupdate_deittext.setText(mUserInfo.mUserName);
-        setting_usernameupdate_deittext.setEnabled(true);
-        setting_usernameupdate_deittext.setFocusable(true);
-        setting_usernameupdate_deittext.setFocusableInTouchMode(true);
-        setting_usernameupdate_deittext.requestFocus();
-        setting_usernameupdate_deittext.setSelection(setting_usernameupdate_deittext.getText().toString().length());
+        EditText setting_usernameupdate_edittext = mview.findViewById(R.id.setting_usernameupdate_edittext);
+        if (mPersonalInfoDataBean == null){
+            setting_usernameupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.stu_name != null) {
+            setting_usernameupdate_edittext.setText(mPersonalInfoDataBean.stu_name);
+        } else {
+            setting_usernameupdate_edittext.setText("");
+        }
+        setting_usernameupdate_edittext.setEnabled(true);
+        setting_usernameupdate_edittext.setFocusable(true);
+        setting_usernameupdate_edittext.setFocusableInTouchMode(true);
+        setting_usernameupdate_edittext.requestFocus();
+        setting_usernameupdate_edittext.setSelection(setting_usernameupdate_edittext.getText().toString().length());
+    }
+
+    //显示设置基本信息的修改昵称界面
+    public void SettingUserNickUpdateShow() {
+        if (mview == null){
+            return;
+        }
+        HideAllLayout();
+        RelativeLayout setting_usernickupdate_main = mview.findViewById(R.id.setting_usernickupdate_main);
+        LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_usernickupdate_main.getLayoutParams();
+        LP.width = LinearLayout.LayoutParams.MATCH_PARENT;
+        LP.height = LinearLayout.LayoutParams.MATCH_PARENT;
+        setting_usernickupdate_main.setLayoutParams(LP);
+        setting_usernickupdate_main.setVisibility(View.VISIBLE);
+        EditText setting_usernickupdate_edittext = mview.findViewById(R.id.setting_usernickupdate_edittext);
+        if (mPersonalInfoDataBean == null){
+            setting_usernickupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.nickname == null) {
+            setting_usernickupdate_edittext.setText("");
+        } else {
+            setting_usernickupdate_edittext.setText(mPersonalInfoDataBean.nickname);
+        }
+        setting_usernickupdate_edittext.setEnabled(true);
+        setting_usernickupdate_edittext.setFocusable(true);
+        setting_usernickupdate_edittext.setFocusableInTouchMode(true);
+        setting_usernickupdate_edittext.requestFocus();
+        setting_usernickupdate_edittext.setSelection(setting_usernickupdate_edittext.getText().toString().length());
     }
 
     //显示设置基本信息的修改个人说明界面
-    public void SettingPersonalStatementUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingPersonalStatementUpdateShow() {
+        if (mview == null ){
             return;
         }
-        mUserInfo.mUserIntroduce = userInfo.mUserIntroduce;
         HideAllLayout();
         RelativeLayout setting_personalstatementupdate_main = mview.findViewById(R.id.setting_personalstatementupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_personalstatementupdate_main.getLayoutParams();
@@ -276,7 +337,13 @@ public class ModelSetting extends Fragment {
         setting_personalstatementupdate_main.setLayoutParams(LP);
         setting_personalstatementupdate_main.setVisibility(View.VISIBLE);
         EditText setting_personalstatementupdate_edittext = mview.findViewById(R.id.setting_personalstatementupdate_edittext);
-        setting_personalstatementupdate_edittext.setText(mUserInfo.mUserIntroduce);
+        if (mPersonalInfoDataBean == null){
+            setting_personalstatementupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.autograph == null) {
+            setting_personalstatementupdate_edittext.setText("");
+        } else {
+            setting_personalstatementupdate_edittext.setText(mPersonalInfoDataBean.autograph);
+        }
         setting_personalstatementupdate_edittext.setEnabled(true);
         setting_personalstatementupdate_edittext.setFocusable(true);
         setting_personalstatementupdate_edittext.setFocusableInTouchMode(true);
@@ -285,11 +352,10 @@ public class ModelSetting extends Fragment {
     }
 
     //显示设置基本信息的修改邮箱界面
-    public void SettingEmailUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingEmailUpdateShow() {
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserEmail = userInfo.mUserEmail;
         HideAllLayout();
         RelativeLayout setting_emailupdate_main = mview.findViewById(R.id.setting_emailupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_emailupdate_main.getLayoutParams();
@@ -298,7 +364,13 @@ public class ModelSetting extends Fragment {
         setting_emailupdate_main.setLayoutParams(LP);
         setting_emailupdate_main.setVisibility(View.VISIBLE);
         EditText setting_emailupdate_edittext = mview.findViewById(R.id.setting_emailupdate_edittext);
-        setting_emailupdate_edittext.setText(mUserInfo.mUserEmail);
+        if (mPersonalInfoDataBean == null){
+            setting_emailupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.email == null) {
+            setting_emailupdate_edittext.setText("");
+        } else {
+            setting_emailupdate_edittext.setText(mPersonalInfoDataBean.email);
+        }
         setting_emailupdate_edittext.setEnabled(true);
         setting_emailupdate_edittext.setFocusable(true);
         setting_emailupdate_edittext.setFocusableInTouchMode(true);
@@ -307,11 +379,10 @@ public class ModelSetting extends Fragment {
     }
 
     //显示设置基本信息的修改手机号码界面
-    public void SettingTelNumberUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingTelNumberUpdateShow() {
+        if (mview == null ){
             return;
         }
-        mUserInfo.mUserTeleNum = userInfo.mUserTeleNum;
         HideAllLayout();
         RelativeLayout setting_telnumberupdate_main = mview.findViewById(R.id.setting_telnumberupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_telnumberupdate_main.getLayoutParams();
@@ -320,7 +391,13 @@ public class ModelSetting extends Fragment {
         setting_telnumberupdate_main.setLayoutParams(LP);
         setting_telnumberupdate_main.setVisibility(View.VISIBLE);
         EditText setting_telnumberupdate_edittext = mview.findViewById(R.id.setting_telnumberupdate_edittext);
-        setting_telnumberupdate_edittext.setText(mUserInfo.mUserTeleNum);
+        if (mPersonalInfoDataBean == null){
+            setting_telnumberupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.tel == null) {
+            setting_telnumberupdate_edittext.setText("");
+        } else {
+            setting_telnumberupdate_edittext.setText(mPersonalInfoDataBean.tel);
+        }
         setting_telnumberupdate_edittext.setEnabled(true);
         setting_telnumberupdate_edittext.setFocusable(true);
         setting_telnumberupdate_edittext.setFocusableInTouchMode(true);
@@ -329,11 +406,10 @@ public class ModelSetting extends Fragment {
     }
 
     //显示设置基本信息的修改证件号码界面
-    public void SettingIdNumberUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingIdNumberUpdateShow() {
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserIdNum = userInfo.mUserIdNum;
         HideAllLayout();
         RelativeLayout setting_idnumberupdate_main = mview.findViewById(R.id.setting_idnumberupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_idnumberupdate_main.getLayoutParams();
@@ -342,7 +418,13 @@ public class ModelSetting extends Fragment {
         setting_idnumberupdate_main.setLayoutParams(LP);
         setting_idnumberupdate_main.setVisibility(View.VISIBLE);
         EditText setting_idnumberupdate_edittext = mview.findViewById(R.id.setting_idnumberupdate_edittext);
-        setting_idnumberupdate_edittext.setText(mUserInfo.mUserIdNum);
+        if (mPersonalInfoDataBean == null){
+            setting_idnumberupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.ID_number == null) {
+            setting_idnumberupdate_edittext.setText("");
+        } else {
+            setting_idnumberupdate_edittext.setText(mPersonalInfoDataBean.ID_number);
+        }
         setting_idnumberupdate_edittext.setEnabled(true);
         setting_idnumberupdate_edittext.setFocusable(true);
         setting_idnumberupdate_edittext.setFocusableInTouchMode(true);
@@ -351,11 +433,10 @@ public class ModelSetting extends Fragment {
     }
 
     //显示设置基本信息的修改用户密码界面
-    public void SettingPasswordUpdateShow(UserInfo userInfo) {
-        if (mview == null || userInfo == null){
+    public void SettingPasswordUpdateShow() {
+        if (mview == null){
             return;
         }
-        mUserInfo.mUserPassword = userInfo.mUserPassword;
         HideAllLayout();
         RelativeLayout setting_passwordupdate_main = mview.findViewById(R.id.setting_passwordupdate_main);
         LinearLayout.LayoutParams LP = (LinearLayout.LayoutParams) setting_passwordupdate_main.getLayoutParams();
@@ -396,6 +477,7 @@ public class ModelSetting extends Fragment {
         aboutus_main.setLayoutParams(LP);
         aboutus_main.setVisibility(View.VISIBLE);
         //查询版本号，如果有新的版本号 在版本检测后面添加红点
+        getAboutUsInfoDatas();
     }
 
     //隐藏所有图层
@@ -454,368 +536,23 @@ public class ModelSetting extends Fragment {
         LP.height = 0;
         aboutus_main.setLayoutParams(LP);
         aboutus_main.setVisibility(View.INVISIBLE);
+        RelativeLayout setting_usernickupdate_main = mview.findViewById(R.id.setting_usernickupdate_main);
+        LP = (LinearLayout.LayoutParams) setting_usernickupdate_main.getLayoutParams();
+        LP.width = 0;
+        LP.height = 0;
+        setting_usernickupdate_main.setLayoutParams(LP);
+        setting_usernickupdate_main.setVisibility(View.INVISIBLE);
     }
 
     //初始化设置主界面
     public void SettingMainInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_returnRelativeLayout = mview.findViewById(R.id.setting_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_returnRelativeLayout.setLayoutParams(lp);
-        //返回
-        ImageView setting_return_button = mview.findViewById(R.id.setting_return_button);
-        RelativeLayout.LayoutParams setting_return_buttonLp = (RelativeLayout.LayoutParams) setting_return_button.getLayoutParams();
-        setting_return_buttonLp.height = width / 15;
-        setting_return_buttonLp.width = width / 15;
-        setting_return_button.setLayoutParams(setting_return_buttonLp);
-        //功能列表
-        //基本信息
-        TextView setting_essentialinformation_textview = mview.findViewById(R.id.setting_essentialinformation_textview);
-        RelativeLayout.LayoutParams setting_essentialinformation_textviewlp = (RelativeLayout.LayoutParams) setting_essentialinformation_textview.getLayoutParams();
-        setting_essentialinformation_textviewlp.topMargin = bottomMargin;
-        setting_essentialinformation_textviewlp.height = layoutheight;
-        setting_essentialinformation_textviewlp.leftMargin = leftMargin;
-        setting_essentialinformation_textviewlp.bottomMargin = bottomMargin;
-        setting_essentialinformation_textview.setLayoutParams(setting_essentialinformation_textviewlp);
-        TextView essentialinformation_value_textview = mview.findViewById(R.id.essentialinformation_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_value_textview.getLayoutParams();
-        essentialinformation_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_value_textviewlp.height = layoutheight;
-        essentialinformation_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_value_textview.setLayoutParams(essentialinformation_value_textviewlp);
-        ImageView setting_essentialinformation_go = mview.findViewById(R.id.setting_essentialinformation_go);
-        RelativeLayout.LayoutParams setting_essentialinformation_golp = (RelativeLayout.LayoutParams) setting_essentialinformation_go.getLayoutParams();
-        setting_essentialinformation_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_essentialinformation_golp.rightMargin = rightMargin;
-        setting_essentialinformation_golp.height = width / 25;
-        setting_essentialinformation_golp.width = width / 15;
-        setting_essentialinformation_golp.bottomMargin = layoutheight / 3;
-        setting_essentialinformation_go.setLayoutParams(setting_essentialinformation_golp);
-        //清除缓存
-        TextView setting_clearcache_textview = mview.findViewById(R.id.setting_clearcache_textview);
-        RelativeLayout.LayoutParams setting_clearcache_textviewlp = (RelativeLayout.LayoutParams) setting_clearcache_textview.getLayoutParams();
-        setting_clearcache_textviewlp.topMargin = bottomMargin;
-        setting_clearcache_textviewlp.height = layoutheight;
-        setting_clearcache_textviewlp.leftMargin = leftMargin;
-        setting_clearcache_textviewlp.bottomMargin = bottomMargin;
-        setting_clearcache_textview.setLayoutParams(setting_clearcache_textviewlp);
-        TextView clearcache_value_textview = mview.findViewById(R.id.clearcache_value_textview);
-        RelativeLayout.LayoutParams clearcache_value_textviewlp = (RelativeLayout.LayoutParams) clearcache_value_textview.getLayoutParams();
-        clearcache_value_textviewlp.topMargin = bottomMargin;
-        clearcache_value_textviewlp.height = layoutheight;
-        clearcache_value_textviewlp.bottomMargin = bottomMargin;
-        clearcache_value_textview.setLayoutParams(clearcache_value_textviewlp);
-        ImageView setting_clearcache_go = mview.findViewById(R.id.setting_clearcache_go);
-        RelativeLayout.LayoutParams setting_clearcache_golp = (RelativeLayout.LayoutParams) setting_clearcache_go.getLayoutParams();
-        setting_clearcache_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_clearcache_golp.rightMargin = rightMargin;
-        setting_clearcache_golp.height = width / 25;
-        setting_clearcache_golp.width = width / 15;
-        setting_clearcache_golp.bottomMargin = layoutheight / 3;
-        setting_clearcache_go.setLayoutParams(setting_clearcache_golp);
         //允许非WiFi网络播放/缓存视频
-        TextView setting_allownonwifiplay_textview = mview.findViewById(R.id.setting_allownonwifiplay_textview);
-        RelativeLayout.LayoutParams setting_allownonwifiplay_textviewlp = (RelativeLayout.LayoutParams) setting_allownonwifiplay_textview.getLayoutParams();
-        setting_allownonwifiplay_textviewlp.topMargin = bottomMargin;
-        setting_allownonwifiplay_textviewlp.height = layoutheight;
-        setting_allownonwifiplay_textviewlp.leftMargin = leftMargin;
-        setting_allownonwifiplay_textviewlp.bottomMargin = bottomMargin;
-        setting_allownonwifiplay_textview.setLayoutParams(setting_allownonwifiplay_textviewlp);
-        TextView allownonwifiplay_value_textview = mview.findViewById(R.id.allownonwifiplay_value_textview);
-        RelativeLayout.LayoutParams allownonwifiplay_value_textviewlp = (RelativeLayout.LayoutParams) allownonwifiplay_value_textview.getLayoutParams();
-        allownonwifiplay_value_textviewlp.topMargin = bottomMargin;
-        allownonwifiplay_value_textviewlp.height = layoutheight;
-        allownonwifiplay_value_textviewlp.bottomMargin = bottomMargin;
-        allownonwifiplay_value_textview.setLayoutParams(allownonwifiplay_value_textviewlp);
         ModelSwitchButton setting_allownonwifiplay_go = mview.findViewById(R.id.setting_allownonwifiplay_go);
-        RelativeLayout.LayoutParams setting_allownonwifiplay_golp = (RelativeLayout.LayoutParams) setting_allownonwifiplay_go.getLayoutParams();
-        setting_allownonwifiplay_golp.topMargin = (layoutheight + bottomMargin * 2) / 4;
-        setting_allownonwifiplay_golp.rightMargin = rightMargin;
-        setting_allownonwifiplay_golp.height = (int) ((layoutheight + bottomMargin * 2) / 1.8);
-        setting_allownonwifiplay_golp.width = layoutheight + bottomMargin * 2;
-        setting_allownonwifiplay_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 4;
-        setting_allownonwifiplay_go.setLayoutParams(setting_allownonwifiplay_golp);
         setting_allownonwifiplay_go.setChecked(true);
         setting_allownonwifiplay_go.setOnCheckedChangeListener((view,isChecked) ->{
             //TODO do your job
             mControlMainActivity.onClickSettingAllowNonWifiPlay(isChecked);
         });
-//        //版本
-//        TextView setting_version_textview = mview.findViewById(R.id.setting_version_textview);
-//        RelativeLayout.LayoutParams setting_version_textviewlp = (RelativeLayout.LayoutParams) setting_version_textview.getLayoutParams();
-//        setting_version_textviewlp.topMargin = bottomMargin;
-//        setting_version_textviewlp.height = layoutheight;
-//        setting_version_textviewlp.leftMargin = leftMargin;
-//        setting_version_textviewlp.bottomMargin = bottomMargin;
-//        setting_version_textview.setLayoutParams(setting_version_textviewlp);
-//        TextView version_value_textview = mview.findViewById(R.id.version_value_textview);
-//        RelativeLayout.LayoutParams version_value_textviewlp = (RelativeLayout.LayoutParams) version_value_textview.getLayoutParams();
-//        version_value_textviewlp.topMargin = bottomMargin;
-//        version_value_textviewlp.height = layoutheight;
-//        version_value_textviewlp.bottomMargin = bottomMargin;
-//        version_value_textview.setLayoutParams(version_value_textviewlp);
-//        ImageView setting_version_go = mview.findViewById(R.id.setting_version_go);
-//        RelativeLayout.LayoutParams setting_version_golp = (RelativeLayout.LayoutParams) setting_version_go.getLayoutParams();
-//        setting_version_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-//        setting_version_golp.rightMargin = rightMargin;
-//        setting_version_golp.height = width / 25;
-//        setting_version_golp.width = width / 15;
-//        setting_version_golp.bottomMargin = layoutheight / 3;
-//        setting_version_go.setLayoutParams(setting_version_golp);
-        //关于我们
-        TextView setting_aboutus_textview = mview.findViewById(R.id.setting_aboutus_textview);
-        RelativeLayout.LayoutParams setting_aboutus_textviewlp = (RelativeLayout.LayoutParams) setting_aboutus_textview.getLayoutParams();
-        setting_aboutus_textviewlp.topMargin = bottomMargin;
-        setting_aboutus_textviewlp.height = layoutheight;
-        setting_aboutus_textviewlp.leftMargin = leftMargin;
-        setting_aboutus_textviewlp.bottomMargin = bottomMargin;
-        setting_aboutus_textview.setLayoutParams(setting_aboutus_textviewlp);
-        TextView aboutus_value_textview = mview.findViewById(R.id.aboutus_value_textview);
-        RelativeLayout.LayoutParams aboutus_value_textviewlp = (RelativeLayout.LayoutParams) aboutus_value_textview.getLayoutParams();
-        aboutus_value_textviewlp.topMargin = bottomMargin;
-        aboutus_value_textviewlp.height = layoutheight;
-        aboutus_value_textviewlp.bottomMargin = bottomMargin;
-        aboutus_value_textview.setLayoutParams(aboutus_value_textviewlp);
-        ImageView setting_aboutus_go = mview.findViewById(R.id.setting_aboutus_go);
-        RelativeLayout.LayoutParams setting_aboutus_golp = (RelativeLayout.LayoutParams) setting_aboutus_go.getLayoutParams();
-        setting_aboutus_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_aboutus_golp.rightMargin = rightMargin;
-        setting_aboutus_golp.height = width / 25;
-        setting_aboutus_golp.width = width / 15;
-        setting_aboutus_golp.bottomMargin = layoutheight / 3;
-        setting_aboutus_go.setLayoutParams(setting_aboutus_golp);
-//        //隐私政策
-//        TextView setting_privacypolicy_textview = mview.findViewById(R.id.setting_privacypolicy_textview);
-//        RelativeLayout.LayoutParams setting_privacypolicy_textviewlp = (RelativeLayout.LayoutParams) setting_privacypolicy_textview.getLayoutParams();
-//        setting_privacypolicy_textviewlp.topMargin = bottomMargin;
-//        setting_privacypolicy_textviewlp.height = layoutheight;
-//        setting_privacypolicy_textviewlp.leftMargin = leftMargin;
-//        setting_privacypolicy_textviewlp.bottomMargin = bottomMargin;
-//        setting_privacypolicy_textview.setLayoutParams(setting_privacypolicy_textviewlp);
-//        TextView privacypolicy_value_textview = mview.findViewById(R.id.privacypolicy_value_textview);
-//        RelativeLayout.LayoutParams privacypolicy_value_textviewlp = (RelativeLayout.LayoutParams) privacypolicy_value_textview.getLayoutParams();
-//        privacypolicy_value_textviewlp.topMargin = bottomMargin;
-//        privacypolicy_value_textviewlp.height = layoutheight;
-//        privacypolicy_value_textviewlp.bottomMargin = bottomMargin;
-//        privacypolicy_value_textview.setLayoutParams(privacypolicy_value_textviewlp);
-//        ImageView setting_privacypolicy_go = mview.findViewById(R.id.setting_privacypolicy_go);
-//        RelativeLayout.LayoutParams setting_privacypolicy_golp = (RelativeLayout.LayoutParams) setting_privacypolicy_go.getLayoutParams();
-//        setting_privacypolicy_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-//        setting_privacypolicy_golp.rightMargin = rightMargin;
-//        setting_privacypolicy_golp.height = width / 25;
-//        setting_privacypolicy_golp.width = width / 15;
-//        setting_privacypolicy_golp.bottomMargin = layoutheight / 3;
-//        setting_privacypolicy_go.setLayoutParams(setting_privacypolicy_golp);
-        //设置退出当前账号按钮
-        Button setting_logout_button = mview.findViewById(R.id.setting_logout_button);
-        lp = (RelativeLayout.LayoutParams) setting_logout_button.getLayoutParams();
-        lp.leftMargin = rightMargin;
-        lp.rightMargin = rightMargin;
-        lp.height = width / 6;
-        lp.bottomMargin = bottomMargin;
-        setting_logout_button.setLayoutParams(lp);
-    }
-
-    //初始化设置-基本信息主界面
-    public void SettingBaseInfoMainInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_essentialinformation_returnRelativeLayout = mview.findViewById(R.id.setting_essentialinformation_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_essentialinformation_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_essentialinformation_returnRelativeLayout.setLayoutParams(lp);
-        //返回
-        ImageView setting_essentialinformation_return_button = mview.findViewById(R.id.setting_essentialinformation_return_button);
-        RelativeLayout.LayoutParams setting_essentialinformation_return_buttonLp = (RelativeLayout.LayoutParams) setting_essentialinformation_return_button.getLayoutParams();
-        setting_essentialinformation_return_buttonLp.height = width / 15;
-        setting_essentialinformation_return_buttonLp.width = width / 15;
-        setting_essentialinformation_return_button.setLayoutParams(setting_essentialinformation_return_buttonLp);
-        //功能列表
-        //头像
-        TextView ssentialinformation_icon_textview = mview.findViewById(R.id.ssentialinformation_icon_textview);
-        RelativeLayout.LayoutParams ssentialinformation_icon_textviewlp = (RelativeLayout.LayoutParams) ssentialinformation_icon_textview.getLayoutParams();
-        ssentialinformation_icon_textviewlp.topMargin = bottomMargin;
-        ssentialinformation_icon_textviewlp.height = layoutheight;
-        ssentialinformation_icon_textviewlp.leftMargin = leftMargin;
-        ssentialinformation_icon_textviewlp.bottomMargin = bottomMargin;
-        ssentialinformation_icon_textview.setLayoutParams(ssentialinformation_icon_textviewlp);
-        TextView essentialinformation_icon_textview = mview.findViewById(R.id.essentialinformation_icon_textview);
-        RelativeLayout.LayoutParams essentialinformation_icon_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_icon_textview.getLayoutParams();
-        essentialinformation_icon_textviewlp.topMargin = bottomMargin;
-        essentialinformation_icon_textviewlp.height = layoutheight;
-        essentialinformation_icon_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_icon_textview.setLayoutParams(essentialinformation_icon_textviewlp);
-        ImageView essentialinformation_icon_go = mview.findViewById(R.id.essentialinformation_icon_go);
-        RelativeLayout.LayoutParams essentialinformation_icon_golp = (RelativeLayout.LayoutParams) essentialinformation_icon_go.getLayoutParams();
-        essentialinformation_icon_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_icon_golp.rightMargin = rightMargin;
-        essentialinformation_icon_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_icon_golp.width = width / 15;
-        essentialinformation_icon_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_icon_go.setLayoutParams(essentialinformation_icon_golp);
-        //账号
-        TextView essentialinformation_id_textview = mview.findViewById(R.id.essentialinformation_id_textview);
-        RelativeLayout.LayoutParams essentialinformation_id_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_id_textview.getLayoutParams();
-        essentialinformation_id_textviewlp.topMargin = bottomMargin;
-        essentialinformation_id_textviewlp.height = layoutheight;
-        essentialinformation_id_textviewlp.leftMargin = leftMargin;
-        essentialinformation_id_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_id_textview.setLayoutParams(essentialinformation_id_textviewlp);
-        TextView essentialinformation_id_value_textview = mview.findViewById(R.id.essentialinformation_id_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_id_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_id_value_textview.getLayoutParams();
-        essentialinformation_id_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_id_value_textviewlp.height = layoutheight;
-        essentialinformation_id_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_id_value_textviewlp.rightMargin = rightMargin;
-        essentialinformation_id_value_textview.setLayoutParams(essentialinformation_id_value_textviewlp);
-        //姓名
-        TextView essentialinformation_name_textview = mview.findViewById(R.id.essentialinformation_name_textview);
-        RelativeLayout.LayoutParams essentialinformation_name_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_name_textview.getLayoutParams();
-        essentialinformation_name_textviewlp.topMargin = bottomMargin;
-        essentialinformation_name_textviewlp.height = layoutheight;
-        essentialinformation_name_textviewlp.leftMargin = leftMargin;
-        essentialinformation_name_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_name_textview.setLayoutParams(essentialinformation_name_textviewlp);
-        TextView essentialinformation_name_value_textview = mview.findViewById(R.id.essentialinformation_name_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_name_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_name_value_textview.getLayoutParams();
-        essentialinformation_name_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_name_value_textviewlp.height = layoutheight;
-        essentialinformation_name_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_name_value_textview.setLayoutParams(essentialinformation_name_value_textviewlp);
-        ImageView essentialinformation_name_go = mview.findViewById(R.id.essentialinformation_name_go);
-        RelativeLayout.LayoutParams essentialinformation_name_golp = (RelativeLayout.LayoutParams) essentialinformation_name_go.getLayoutParams();
-        essentialinformation_name_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_name_golp.rightMargin = rightMargin;
-        essentialinformation_name_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_name_golp.width = width / 15;
-        essentialinformation_name_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_name_go.setLayoutParams(essentialinformation_name_golp);
-        //签名
-        TextView essentialinformation_sign_textview = mview.findViewById(R.id.essentialinformation_sign_textview);
-        RelativeLayout.LayoutParams essentialinformation_sign_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_sign_textview.getLayoutParams();
-        essentialinformation_sign_textviewlp.topMargin = bottomMargin;
-        essentialinformation_sign_textviewlp.height = layoutheight;
-        essentialinformation_sign_textviewlp.leftMargin = leftMargin;
-        essentialinformation_sign_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_sign_textview.setLayoutParams(essentialinformation_sign_textviewlp);
-        TextView essentialinformation_sign_value_textview = mview.findViewById(R.id.essentialinformation_sign_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_sign_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_sign_value_textview.getLayoutParams();
-        essentialinformation_sign_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_sign_value_textviewlp.height = layoutheight;
-        essentialinformation_sign_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_sign_value_textview.setLayoutParams(essentialinformation_sign_value_textviewlp);
-        ImageView essentialinformation_sign_go = mview.findViewById(R.id.essentialinformation_sign_go);
-        RelativeLayout.LayoutParams essentialinformation_sign_golp = (RelativeLayout.LayoutParams) essentialinformation_sign_go.getLayoutParams();
-        essentialinformation_sign_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_sign_golp.rightMargin = rightMargin;
-        essentialinformation_sign_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_sign_golp.width = width / 15;
-        essentialinformation_sign_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_sign_go.setLayoutParams(essentialinformation_sign_golp);
-        //邮箱
-        TextView essentialinformation_email_textview = mview.findViewById(R.id.essentialinformation_email_textview);
-        RelativeLayout.LayoutParams essentialinformation_email_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_email_textview.getLayoutParams();
-        essentialinformation_email_textviewlp.topMargin = bottomMargin;
-        essentialinformation_email_textviewlp.height = layoutheight;
-        essentialinformation_email_textviewlp.leftMargin = leftMargin;
-        essentialinformation_email_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_email_textview.setLayoutParams(essentialinformation_email_textviewlp);
-        TextView essentialinformation_email_value_textview = mview.findViewById(R.id.essentialinformation_email_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_email_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_email_value_textview.getLayoutParams();
-        essentialinformation_email_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_email_value_textviewlp.height = layoutheight;
-        essentialinformation_email_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_email_value_textview.setLayoutParams(essentialinformation_email_value_textviewlp);
-        ImageView essentialinformation_email_go = mview.findViewById(R.id.essentialinformation_email_go);
-        RelativeLayout.LayoutParams essentialinformation_email_golp = (RelativeLayout.LayoutParams) essentialinformation_email_go.getLayoutParams();
-        essentialinformation_email_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_email_golp.rightMargin = rightMargin;
-        essentialinformation_email_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_email_golp.width = width / 15;
-        essentialinformation_email_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_email_go.setLayoutParams(essentialinformation_email_golp);
-        //电话号码
-        TextView essentialinformation_tel_textview = mview.findViewById(R.id.essentialinformation_tel_textview);
-        RelativeLayout.LayoutParams essentialinformation_tel_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_tel_textview.getLayoutParams();
-        essentialinformation_tel_textviewlp.topMargin = bottomMargin;
-        essentialinformation_tel_textviewlp.height = layoutheight;
-        essentialinformation_tel_textviewlp.leftMargin = leftMargin;
-        essentialinformation_tel_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_tel_textview.setLayoutParams(essentialinformation_tel_textviewlp);
-        TextView essentialinformation_tel_value_textview = mview.findViewById(R.id.essentialinformation_tel_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_tel_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_tel_value_textview.getLayoutParams();
-        essentialinformation_tel_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_tel_value_textviewlp.height = layoutheight;
-        essentialinformation_tel_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_tel_value_textview.setLayoutParams(essentialinformation_tel_value_textviewlp);
-        ImageView essentialinformation_tel_go = mview.findViewById(R.id.essentialinformation_tel_go);
-        RelativeLayout.LayoutParams essentialinformation_tel_golp = (RelativeLayout.LayoutParams) essentialinformation_tel_go.getLayoutParams();
-        essentialinformation_tel_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_tel_golp.rightMargin = rightMargin;
-        essentialinformation_tel_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_tel_golp.width = width / 15;
-        essentialinformation_tel_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_tel_go.setLayoutParams(essentialinformation_tel_golp);
-        //证件号码
-        TextView essentialinformation_idnumber_textview = mview.findViewById(R.id.essentialinformation_idnumber_textview);
-        RelativeLayout.LayoutParams essentialinformation_idnumber_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_idnumber_textview.getLayoutParams();
-        essentialinformation_idnumber_textviewlp.topMargin = bottomMargin;
-        essentialinformation_idnumber_textviewlp.height = layoutheight;
-        essentialinformation_idnumber_textviewlp.leftMargin = leftMargin;
-        essentialinformation_idnumber_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_idnumber_textview.setLayoutParams(essentialinformation_idnumber_textviewlp);
-        TextView essentialinformation_idnumber_value_textview = mview.findViewById(R.id.essentialinformation_idnumber_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_idnumber_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_idnumber_value_textview.getLayoutParams();
-        essentialinformation_idnumber_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_idnumber_value_textviewlp.height = layoutheight;
-        essentialinformation_idnumber_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_idnumber_value_textview.setLayoutParams(essentialinformation_idnumber_value_textviewlp);
-        ImageView essentialinformation_idnumber_go = mview.findViewById(R.id.essentialinformation_idnumber_go);
-        RelativeLayout.LayoutParams essentialinformation_idnumber_golp = (RelativeLayout.LayoutParams) essentialinformation_idnumber_go.getLayoutParams();
-        essentialinformation_idnumber_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_idnumber_golp.rightMargin = rightMargin;
-        essentialinformation_idnumber_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_idnumber_golp.width = width / 15;
-        essentialinformation_idnumber_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_idnumber_go.setLayoutParams(essentialinformation_idnumber_golp);
-        //修改密码
-        TextView essentialinformation_updatapassword_textview = mview.findViewById(R.id.essentialinformation_updatapassword_textview);
-        RelativeLayout.LayoutParams essentialinformation_updatapassword_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_updatapassword_textview.getLayoutParams();
-        essentialinformation_updatapassword_textviewlp.topMargin = bottomMargin;
-        essentialinformation_updatapassword_textviewlp.height = layoutheight;
-        essentialinformation_updatapassword_textviewlp.leftMargin = leftMargin;
-        essentialinformation_updatapassword_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_updatapassword_textview.setLayoutParams(essentialinformation_updatapassword_textviewlp);
-        TextView essentialinformation_updatapassword_value_textview = mview.findViewById(R.id.essentialinformation_updatapassword_value_textview);
-        RelativeLayout.LayoutParams essentialinformation_updatapassword_value_textviewlp = (RelativeLayout.LayoutParams) essentialinformation_updatapassword_value_textview.getLayoutParams();
-        essentialinformation_updatapassword_value_textviewlp.topMargin = bottomMargin;
-        essentialinformation_updatapassword_value_textviewlp.height = layoutheight;
-        essentialinformation_updatapassword_value_textviewlp.bottomMargin = bottomMargin;
-        essentialinformation_updatapassword_value_textview.setLayoutParams(essentialinformation_updatapassword_value_textviewlp);
-        ImageView essentialinformation_updatapassword_go = mview.findViewById(R.id.essentialinformation_updatapassword_go);
-        RelativeLayout.LayoutParams essentialinformation_updatapassword_golp = (RelativeLayout.LayoutParams) essentialinformation_updatapassword_go.getLayoutParams();
-        essentialinformation_updatapassword_golp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_updatapassword_golp.rightMargin = rightMargin;
-        essentialinformation_updatapassword_golp.height = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_updatapassword_golp.width = width / 15;
-        essentialinformation_updatapassword_golp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        essentialinformation_updatapassword_go.setLayoutParams(essentialinformation_updatapassword_golp);
     }
 
     private void SetttingButtonDialogInit() {
@@ -849,94 +586,58 @@ public class ModelSetting extends Fragment {
     }
 
     private void SettingUserNameUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_usernameupdate_returnRelativeLayout = mview.findViewById(R.id.setting_usernameupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_usernameupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_usernameupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_usernameupdate_return_text = mview.findViewById(R.id.setting_usernameupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_usernameupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_usernameupdate_return_text.setLayoutParams(lp);
         //修改名称的书写框
-        EditText setting_usernameupdate_deittext = mview.findViewById(R.id.setting_usernameupdate_deittext);
-        lp = (RelativeLayout.LayoutParams) setting_usernameupdate_deittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_usernameupdate_deittext.setLayoutParams(lp);
-        setting_usernameupdate_deittext.setText(mUserInfo.mUserName);
-        setting_usernameupdate_deittext.setEnabled(true);
-        setting_usernameupdate_deittext.setFocusable(true);
-        setting_usernameupdate_deittext.setFocusableInTouchMode(true);
-        setting_usernameupdate_deittext.requestFocus();
-        setting_usernameupdate_deittext.setSelection(setting_usernameupdate_deittext.getText().toString().length());
-        //完成
-        Button setting_usernameupdate_finish = mview.findViewById(R.id.setting_usernameupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_usernameupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_usernameupdate_finish.setLayoutParams(lp);
-        //清空全部文字
-        ImageView setting_usernameupdate_clearbutton = mview.findViewById(R.id.setting_usernameupdate_clearbutton);
-        lp = (RelativeLayout.LayoutParams) setting_usernameupdate_clearbutton.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_usernameupdate_clearbutton.setLayoutParams(lp);
+        EditText setting_usernameupdate_edittext = mview.findViewById(R.id.setting_usernameupdate_edittext);
+        if (mPersonalInfoDataBean == null){
+            setting_usernameupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.stu_name != null) {
+            setting_usernameupdate_edittext.setText("");
+        } else {
+            setting_usernameupdate_edittext.setText(mPersonalInfoDataBean.stu_name);
+        }
+        setting_usernameupdate_edittext.setEnabled(true);
+        setting_usernameupdate_edittext.setFocusable(true);
+        setting_usernameupdate_edittext.setFocusableInTouchMode(true);
+        setting_usernameupdate_edittext.requestFocus();
+        setting_usernameupdate_edittext.setSelection(setting_usernameupdate_edittext.getText().toString().length());
     }
 
     public void SettingUserNameUpdateClear(){
         if (mview == null){
             return;
         }
-        EditText setting_usernameupdate_deittext = mview.findViewById(R.id.setting_usernameupdate_deittext);
-        setting_usernameupdate_deittext.setText("");
+        EditText setting_usernameupdate_edittext = mview.findViewById(R.id.setting_usernameupdate_edittext);
+        setting_usernameupdate_edittext.setText("");
     }
 
     public String UserNameGet(){
+        EditText setting_usernameupdate_edittext = mview.findViewById(R.id.setting_usernameupdate_edittext);
+        return setting_usernameupdate_edittext.getText().toString();
+    }
+
+    public String UserNickGet(){
+        EditText setting_usernickupdate_edittext = mview.findViewById(R.id.setting_usernickupdate_edittext);
+        return setting_usernickupdate_edittext.getText().toString();
+    }
+
+    public void SettingUserNickUpdateClear(){
         if (mview == null){
-            return mUserInfo.mUserName;
+            return;
         }
-        EditText setting_usernameupdate_deittext = mview.findViewById(R.id.setting_usernameupdate_deittext);
-        return setting_usernameupdate_deittext.getText().toString();
+        EditText setting_usernickupdate_edittext = mview.findViewById(R.id.setting_usernickupdate_edittext);
+        setting_usernickupdate_edittext.setText("");
     }
 
     private void SettingPersonalStatementUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_personalstatementupdate_returnRelativeLayout = mview.findViewById(R.id.setting_personalstatementupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_personalstatementupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_personalstatementupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_personalstatementupdate_return_text = mview.findViewById(R.id.setting_personalstatementupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_personalstatementupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_personalstatementupdate_return_text.setLayoutParams(lp);
-        //修改名称的书写框
+        //修改个人说明的书写框
         EditText setting_personalstatementupdate_edittext = mview.findViewById(R.id.setting_personalstatementupdate_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_personalstatementupdate_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = (int) ((layoutheight + bottomMargin * 2) * 1.5);
-        setting_personalstatementupdate_edittext.setLayoutParams(lp);
-        setting_personalstatementupdate_edittext.setText(mUserInfo.mUserIntroduce);
+        if (mPersonalInfoDataBean == null){
+            setting_personalstatementupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.autograph != null) {
+            setting_personalstatementupdate_edittext.setText("");
+        } else {
+            setting_personalstatementupdate_edittext.setText(mPersonalInfoDataBean.autograph);
+        }
         setting_personalstatementupdate_edittext.setEnabled(true);
         setting_personalstatementupdate_edittext.setFocusable(true);
         setting_personalstatementupdate_edittext.setFocusableInTouchMode(true);
@@ -948,67 +649,31 @@ public class ModelSetting extends Fragment {
         //水平滚动设置为False
         setting_personalstatementupdate_edittext.setHorizontallyScrolling(false);
         setting_personalstatementupdate_edittext.setSelection(setting_personalstatementupdate_edittext.getText().toString().length());
-        //完成
-        Button setting_personalstatementupdate_finish = mview.findViewById(R.id.setting_personalstatementupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_personalstatementupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_personalstatementupdate_finish.setLayoutParams(lp);
     }
 
     public String PersonalStatementGet(){
         if (mview == null){
-            return mUserInfo.mUserIntroduce;
+            return "";
         }
         EditText setting_personalstatementupdate_edittext = mview.findViewById(R.id.setting_personalstatementupdate_edittext);
         return setting_personalstatementupdate_edittext.getText().toString();
     }
 
     private void SettingEmailUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_emailupdate_returnRelativeLayout = mview.findViewById(R.id.setting_emailupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_emailupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_emailupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_emailupdate_return_text = mview.findViewById(R.id.setting_emailupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_emailupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_emailupdate_return_text.setLayoutParams(lp);
         //修改邮箱的书写框
         EditText setting_emailupdate_edittext = mview.findViewById(R.id.setting_emailupdate_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_emailupdate_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_emailupdate_edittext.setLayoutParams(lp);
-        setting_emailupdate_edittext.setText(mUserInfo.mUserEmail);
+        if (mPersonalInfoDataBean == null){
+            setting_emailupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.email != null) {
+            setting_emailupdate_edittext.setText("");
+        } else {
+            setting_emailupdate_edittext.setText(mPersonalInfoDataBean.email);
+        }
         setting_emailupdate_edittext.setEnabled(true);
         setting_emailupdate_edittext.setFocusable(true);
         setting_emailupdate_edittext.setFocusableInTouchMode(true);
         setting_emailupdate_edittext.requestFocus();
         setting_emailupdate_edittext.setSelection(setting_emailupdate_edittext.getText().toString().length());
-        //完成
-        Button setting_emailupdate_finish = mview.findViewById(R.id.setting_emailupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_emailupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_emailupdate_finish.setLayoutParams(lp);
-        //清空全部文字
-        ImageView setting_emailupdate_clearbutton = mview.findViewById(R.id.setting_emailupdate_clearbutton);
-        lp = (RelativeLayout.LayoutParams) setting_emailupdate_clearbutton.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_emailupdate_clearbutton.setLayoutParams(lp);
     }
 
     public void SettingEmailUpdateClear(){
@@ -1021,57 +686,27 @@ public class ModelSetting extends Fragment {
 
     public String EmailGet(){
         if (mview == null){
-            return mUserInfo.mUserEmail;
+            return "";
         }
         EditText setting_emailupdate_edittext = mview.findViewById(R.id.setting_emailupdate_edittext);
         return setting_emailupdate_edittext.getText().toString();
     }
 
     private void SettingTelNumberUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_telnumberupdate_returnRelativeLayout = mview.findViewById(R.id.setting_telnumberupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_telnumberupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_telnumberupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_telnumberupdate_return_text = mview.findViewById(R.id.setting_telnumberupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_telnumberupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_telnumberupdate_return_text.setLayoutParams(lp);
         //修改手机号的书写框
         EditText setting_telnumberupdate_edittext = mview.findViewById(R.id.setting_telnumberupdate_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_telnumberupdate_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_telnumberupdate_edittext.setLayoutParams(lp);
-        setting_telnumberupdate_edittext.setText(mUserInfo.mUserTeleNum);
+        if (mPersonalInfoDataBean == null){
+            setting_telnumberupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.tel != null) {
+            setting_telnumberupdate_edittext.setText("");
+        } else {
+            setting_telnumberupdate_edittext.setText(mPersonalInfoDataBean.tel);
+        }
         setting_telnumberupdate_edittext.setEnabled(true);
         setting_telnumberupdate_edittext.setFocusable(true);
         setting_telnumberupdate_edittext.setFocusableInTouchMode(true);
         setting_telnumberupdate_edittext.requestFocus();
         setting_telnumberupdate_edittext.setSelection(setting_telnumberupdate_edittext.getText().toString().length());
-        //完成
-        Button setting_telnumberupdate_finish = mview.findViewById(R.id.setting_telnumberupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_telnumberupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_telnumberupdate_finish.setLayoutParams(lp);
-        //清空全部文字
-        ImageView setting_telnumber_clearbutton = mview.findViewById(R.id.setting_telnumberupdate_clearbutton);
-        lp = (RelativeLayout.LayoutParams) setting_telnumber_clearbutton.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_telnumber_clearbutton.setLayoutParams(lp);
     }
 
     public void SettingTelNumberUpdateClear(){
@@ -1082,59 +717,29 @@ public class ModelSetting extends Fragment {
         setting_telnumberupdate_edittext.setText("");
     }
 
-        public String TelNumberGet(){
+    public String TelNumberGet(){
         if (mview == null){
-            return mUserInfo.mUserTeleNum;
+            return "";
         }
         EditText setting_telnumberupdate_edittext = mview.findViewById(R.id.setting_telnumberupdate_edittext);
         return setting_telnumberupdate_edittext.getText().toString();
     }
 
     private void SettingIdNumberUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_idnumberupdate_returnRelativeLayout = mview.findViewById(R.id.setting_idnumberupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_idnumberupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_idnumberupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_idnumberupdate_return_text = mview.findViewById(R.id.setting_idnumberupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_idnumberupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_idnumberupdate_return_text.setLayoutParams(lp);
         //修改证件号码的书写框
         EditText setting_idnumberupdate_edittext = mview.findViewById(R.id.setting_idnumberupdate_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_idnumberupdate_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_idnumberupdate_edittext.setLayoutParams(lp);
-        setting_idnumberupdate_edittext.setText(mUserInfo.mUserTeleNum);
+        if (mPersonalInfoDataBean == null){
+            setting_idnumberupdate_edittext.setText("");
+        } else if (mPersonalInfoDataBean.ID_number != null) {
+            setting_idnumberupdate_edittext.setText("");
+        } else {
+            setting_idnumberupdate_edittext.setText(mPersonalInfoDataBean.ID_number);
+        }
         setting_idnumberupdate_edittext.setEnabled(true);
         setting_idnumberupdate_edittext.setFocusable(true);
         setting_idnumberupdate_edittext.setFocusableInTouchMode(true);
         setting_idnumberupdate_edittext.requestFocus();
         setting_idnumberupdate_edittext.setSelection(setting_idnumberupdate_edittext.getText().toString().length());
-        //完成
-        Button setting_idnumberupdate_finish = mview.findViewById(R.id.setting_idnumberupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_idnumberupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_idnumberupdate_finish.setLayoutParams(lp);
-        //清空全部文字
-        ImageView setting_idnumberupdate_clearbutton = mview.findViewById(R.id.setting_idnumberupdate_clearbutton);
-        lp = (RelativeLayout.LayoutParams) setting_idnumberupdate_clearbutton.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_idnumberupdate_clearbutton.setLayoutParams(lp);
     }
 
     public void SettingIdNumberUpdateClear(){
@@ -1147,43 +752,15 @@ public class ModelSetting extends Fragment {
 
     public String IdNumberGet(){
         if (mview == null){
-            return mUserInfo.mUserIdNum;
+            return "";
         }
         EditText setting_idnumberupdate_edittext = mview.findViewById(R.id.setting_idnumberupdate_edittext);
         return setting_idnumberupdate_edittext.getText().toString();
     }
 
     private void SettingPasswordUpdateInit(){
-        //主要参数
-        int layoutheight = width / 10;
-        int leftMargin = width / 25;
-        int rightMargin = width / 40;
-        int bottomMargin = width / 35;
-        RelativeLayout setting_passwordupdate_returnRelativeLayout = mview.findViewById(R.id.setting_passwordupdate_returnRelativeLayout);
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) setting_passwordupdate_returnRelativeLayout.getLayoutParams();
-        lp.topMargin = leftMargin;
-        lp.leftMargin = leftMargin;
-        lp.rightMargin = rightMargin;
-        lp.bottomMargin = bottomMargin;
-        lp.height = layoutheight;
-        setting_passwordupdate_returnRelativeLayout.setLayoutParams(lp);
-        //取消
-        TextView setting_passwordupdate_return_text = mview.findViewById(R.id.setting_passwordupdate_return_text);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdate_return_text.getLayoutParams();
-        lp.height = layoutheight;
-        setting_passwordupdate_return_text.setLayoutParams(lp);
-        //完成
-        Button setting_passwordupdate_finish = mview.findViewById(R.id.setting_passwordupdate_finish);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdate_finish.getLayoutParams();
-        lp.height = layoutheight - bottomMargin;
-        lp.width = (layoutheight - bottomMargin) * 2;
-        setting_passwordupdate_finish.setLayoutParams(lp);
         //修改密码的书写框（旧密码）
         EditText setting_passwordupdateoldpassword_edittext = mview.findViewById(R.id.setting_passwordupdateoldpassword_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdateoldpassword_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_passwordupdateoldpassword_edittext.setLayoutParams(lp);
         setting_passwordupdateoldpassword_edittext.setEnabled(true);
         setting_passwordupdateoldpassword_edittext.setFocusable(true);
         setting_passwordupdateoldpassword_edittext.setFocusableInTouchMode(true);
@@ -1191,39 +768,15 @@ public class ModelSetting extends Fragment {
         setting_passwordupdateoldpassword_edittext.setSelection(setting_passwordupdateoldpassword_edittext.getText().toString().length());
         //旧密码是否明码显示
         ImageView setting_passwordupdateoldpassword_isopeneye = mview.findViewById(R.id.setting_passwordupdateoldpassword_isopeneye);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdateoldpassword_isopeneye.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.width = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_passwordupdateoldpassword_isopeneye.setLayoutParams(lp);
         //修改密码的书写框（新密码）
         EditText setting_passwordupdatenew_edittext = mview.findViewById(R.id.setting_passwordupdatenew_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdatenew_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_passwordupdatenew_edittext.setLayoutParams(lp);
         setting_passwordupdatenew_edittext.setEnabled(true);
         setting_passwordupdatenew_edittext.setFocusable(true);
         setting_passwordupdatenew_edittext.setFocusableInTouchMode(true);
         setting_passwordupdatenew_edittext.requestFocus();
         setting_passwordupdatenew_edittext.setSelection(setting_passwordupdatenew_edittext.getText().toString().length());
-        //新密码是否明码显示
-        ImageView setting_passwordupdatenew_isopeneye = mview.findViewById(R.id.setting_passwordupdatenew_isopeneye);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdatenew_isopeneye.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.width = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_passwordupdatenew_isopeneye.setLayoutParams(lp);
         //修改密码的书写框（确认密码）
         EditText setting_passwordupdatenewagain_edittext = mview.findViewById(R.id.setting_passwordupdatenewagain_edittext);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdatenewagain_edittext.getLayoutParams();
-        lp.leftMargin = leftMargin;
-        lp.height = layoutheight + bottomMargin * 2;
-        setting_passwordupdatenewagain_edittext.setLayoutParams(lp);
         setting_passwordupdatenewagain_edittext.setEnabled(true);
         setting_passwordupdatenewagain_edittext.setFocusable(true);
         setting_passwordupdatenewagain_edittext.setFocusableInTouchMode(true);
@@ -1231,13 +784,8 @@ public class ModelSetting extends Fragment {
         setting_passwordupdatenewagain_edittext.setSelection(setting_passwordupdatenewagain_edittext.getText().toString().length());
         //确认密码是否明码显示
         ImageView setting_passwordupdatenewagain_isopeneye = mview.findViewById(R.id.setting_passwordupdatenewagain_isopeneye);
-        lp = (RelativeLayout.LayoutParams) setting_passwordupdatenewagain_isopeneye.getLayoutParams();
-        lp.height = (layoutheight + bottomMargin * 2) / 3;
-        lp.width = (layoutheight + bottomMargin * 2) / 3;
-        lp.rightMargin = rightMargin;
-        lp.topMargin = (layoutheight + bottomMargin * 2) / 3;
-        lp.bottomMargin = (layoutheight + bottomMargin * 2) / 3;
-        setting_passwordupdatenewagain_isopeneye.setLayoutParams(lp);
+        //确认密码是否明码显示
+        ImageView setting_passwordupdatenew_isopeneye = mview.findViewById(R.id.setting_passwordupdatenewagain_isopeneye);
         //设置密码不可见
         setting_passwordupdateoldpassword_edittext.setTransformationMethod(PasswordTransformationMethod.getInstance());
         setting_passwordupdatenew_edittext.setTransformationMethod(PasswordTransformationMethod.getInstance());
@@ -1290,25 +838,35 @@ public class ModelSetting extends Fragment {
         });
     }
 
-    public int NewPasswordSave(){ //返回值  -1：其他错误 1：原密码输入不正确 2：两次新密码不一致 0：保存新密码
+    public void NewPasswordSave(){ //返回值  -1：其他错误 1：原密码输入不正确 2：两次新密码不一致 0：保存新密码
         if (mview == null){
-            return -1;
+            return ;
         }
         EditText setting_passwordupdateoldpassword_edittext = mview.findViewById(R.id.setting_passwordupdateoldpassword_edittext);
         EditText setting_passwordupdatenew_edittext = mview.findViewById(R.id.setting_passwordupdatenew_edittext);
         EditText setting_passwordupdatenewagain_edittext = mview.findViewById(R.id.setting_passwordupdatenewagain_edittext);
-        if (!setting_passwordupdateoldpassword_edittext.getText().toString().equals(mUserInfo.mUserPassword)){ //原密码输入错误
-            return 1;
+        String origin_stu_pass = setting_passwordupdateoldpassword_edittext.getText().toString();
+        String now_stu_pass = setting_passwordupdatenew_edittext.getText().toString();
+        String now_stu_pass1 = setting_passwordupdatenewagain_edittext.getText().toString();
+        if (origin_stu_pass == null || now_stu_pass == null || now_stu_pass1 == null){
+            Toast.makeText(mControlMainActivity,"系统错误，请重新尝试！",Toast.LENGTH_LONG).show();
+            return ;
         }
-        if (!setting_passwordupdatenew_edittext.getText().toString().equals(setting_passwordupdatenewagain_edittext.getText().toString())){ //两次新密码输入不一致
-            return 2;
+        if (now_stu_pass1.length()<6 || now_stu_pass.length()<6 || origin_stu_pass.length()<6){
+            Toast.makeText(mControlMainActivity,"密码不能少于6位数，请重新输入！",Toast.LENGTH_LONG).show();
+            return ;
         }
-        mUserInfo.mUserPassword = setting_passwordupdatenewagain_edittext.getText().toString();
-        return 0;
+        if (!now_stu_pass1.equals(now_stu_pass)){ //两次新密码输入不一致
+            Toast.makeText(mControlMainActivity,"新密码两次输入不一致，请重新输入！",Toast.LENGTH_LONG).show();
+            return ;
+        }
+        UpdateStuPass(origin_stu_pass,now_stu_pass);
+        return ;
     }
 
     public String NewPasswordGet(){
-        return mUserInfo.mUserPassword;
+//        return mUserInfo.mUserPassword;
+        return "";
     }
 
     private void SettingAboutUsInit(){
@@ -1438,4 +996,478 @@ public class ModelSetting extends Fragment {
         }
     }
 
+    public void UpdataPersonInfo(String type){
+        if (type == null){
+            return;
+        }
+        switch (type){
+            case "username":
+                String username = UserNameGet();
+                setPersonalInfoDatas(null,username,null,null,null,null);
+                break;
+            case "usernick":
+                String usernick = UserNickGet();
+                setPersonalInfoDatas(usernick,null,null,null,null,null);
+                break;
+            case "usersign":
+                String usersign = PersonalStatementGet();
+                setPersonalInfoDatas(null,null,usersign,null,null,null);
+                break;
+            case "email":
+                String email = EmailGet();
+                setPersonalInfoDatas(null,null,null,null,email,null);
+                break;
+            case "telnumber":
+                String telnumber = TelNumberGet();
+                //先查一下改过的手机号码有没有其他学员在使用
+                checkModifyingTel(telnumber);
+                break;
+            case "idnumber":
+                String idnumber = IdNumberGet();
+                setPersonalInfoDatas(null,null,null,null,null,idnumber);
+                break;
+        }
+    }
+    private void getPersonalInfoDatas() {
+        if (mControlMainActivity.mStuId.equals("")){
+            return;
+        }
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+
+        Gson gson = new Gson();
+
+        HashMap<String,Integer> paramsMap= new HashMap<>();
+        paramsMap.put("stu_id",Integer.valueOf(mControlMainActivity.mStuId));
+        String strEntity = gson.toJson(paramsMap);
+        RequestBody body = RequestBody.create(okhttp3.MediaType.parse("application/json;charset=UTF-8"),strEntity);
+        Call<PersonalInfoBean> call = modelObservableInterface.queryModelSettingPersonInfo(body);
+        call.enqueue(new Callback<PersonalInfoBean>() {
+            @Override
+            public void onResponse(Call<PersonalInfoBean> call, Response<PersonalInfoBean> response) {
+                PersonalInfoBean personalInfoBean = response.body();
+                if (personalInfoBean == null){
+                    Toast.makeText(mControlMainActivity,"获取个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                //网络请求数据成功
+                mPersonalInfoDataBean = personalInfoBean.getData();
+                if (mview == null){
+                    Toast.makeText(mControlMainActivity,"获取个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                TextView essentialinformation_id_value_textview = mview.findViewById(R.id.essentialinformation_id_value_textview);
+                essentialinformation_id_value_textview.setText("");
+                TextView essentialinformation_name_value_textview = mview.findViewById(R.id.essentialinformation_name_value_textview);
+                essentialinformation_name_value_textview.setText("");
+                TextView essentialinformation_nick_value_textview = mview.findViewById(R.id.essentialinformation_nick_value_textview);
+                essentialinformation_nick_value_textview.setText("");
+                TextView essentialinformation_sign_value_textview = mview.findViewById(R.id.essentialinformation_sign_value_textview);
+                essentialinformation_sign_value_textview.setText("");
+                TextView essentialinformation_email_value_textview = mview.findViewById(R.id.essentialinformation_email_value_textview);
+                essentialinformation_email_value_textview.setText("");
+                TextView essentialinformation_tel_value_textview = mview.findViewById(R.id.essentialinformation_tel_value_textview);
+                essentialinformation_tel_value_textview.setText("");
+                TextView essentialinformation_idnumber_value_textview = mview.findViewById(R.id.essentialinformation_idnumber_value_textview);
+                essentialinformation_idnumber_value_textview.setText("");
+                if (mPersonalInfoDataBean != null){ //登录状态
+//                    //账号 后面改为账号
+//                    if (mPersonalInfoDataBean.login_number != null) {
+//                        essentialinformation_id_value_textview.setText(mPersonalInfoDataBean.login_number);
+//                    }
+                    //用户名 后面改为用户名
+                    if (mPersonalInfoDataBean.stu_name != null) {
+                        essentialinformation_name_value_textview.setText(mPersonalInfoDataBean.stu_name);
+                    }
+                    //昵称 后面改为昵称
+                    if (mPersonalInfoDataBean.nickname != null) {
+                        essentialinformation_nick_value_textview.setText(mPersonalInfoDataBean.nickname);
+                    }
+                    //个人说明
+                    if (mPersonalInfoDataBean.autograph != null) {
+                        essentialinformation_sign_value_textview.setText(mPersonalInfoDataBean.autograph);
+                    }
+                    //email
+                    if (mPersonalInfoDataBean.email != null) {
+                        essentialinformation_email_value_textview.setText(mPersonalInfoDataBean.email);
+                    }
+                    //电话号码
+                    if (mPersonalInfoDataBean.tel != null) {
+                        mPersonalInfoDataBean.login_number = mPersonalInfoDataBean.tel;
+                        essentialinformation_tel_value_textview.setText(mPersonalInfoDataBean.tel);
+                        essentialinformation_id_value_textview.setText(mPersonalInfoDataBean.login_number);
+                    }
+                    //证件号码
+                    if (mPersonalInfoDataBean.ID_number != null) {
+                        essentialinformation_idnumber_value_textview.setText(mPersonalInfoDataBean.ID_number);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PersonalInfoBean> call, Throwable t) {
+                Toast.makeText(mControlMainActivity,"获取个人信息超时",Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void setPersonalInfoDatas(String nickname, String username, String user_sign, String phone, String email, String idCardNum) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+
+        Gson gson = new Gson();
+
+        HashMap<String,String> paramsMap = new HashMap<>();
+        paramsMap.put("nickname",nickname);
+        paramsMap.put("stu_name",username);
+        paramsMap.put("autograph",user_sign);
+        paramsMap.put("tel",phone);
+        paramsMap.put("email",email);
+        paramsMap.put("ID_number",idCardNum);
+        String strEntity = gson.toJson(paramsMap);
+        HashMap<String,Integer> paramsMap1 = new HashMap<>();
+        paramsMap1.put("stu_id", Integer.valueOf(mControlMainActivity.mStuId));
+        String strEntity1 = gson.toJson(paramsMap1);
+        strEntity1 = strEntity1.replace("{","");
+        strEntity = strEntity.replace("}","," + strEntity1);
+        RequestBody body = RequestBody.create(okhttp3.MediaType.parse("application/json;charset=UTF-8"),strEntity);
+        Call<ModelObservableInterface.BaseBean> call = modelObservableInterface.updataModelSettingPersonInfo(body);
+        call.enqueue(new Callback<ModelObservableInterface.BaseBean>() {
+            @Override
+            public void onResponse(Call<ModelObservableInterface.BaseBean> call, Response<ModelObservableInterface.BaseBean> response) {
+                if (response.code() != 200){
+                    Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                ModelObservableInterface.BaseBean loginBean = response.body();//得到解析后的LoginBean对象
+                if (loginBean == null){
+                    Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (loginBean.getErrorCode() != 200 ){
+                    Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Toast.makeText(mControlMainActivity,"修改成功",Toast.LENGTH_LONG).show();
+                getPersonalInfoDatas();
+            }
+
+            @Override
+            public void onFailure(Call<ModelObservableInterface.BaseBean> call, Throwable t) {
+                Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void checkModifyingTel(String phone) {
+        if (mControlMainActivity.mStuId.equals("")){
+            return;
+        }
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+
+        Gson gson = new Gson();
+
+        HashMap<String,String> paramsMap = new HashMap<>();
+        paramsMap.put("tel",phone);
+        String strEntity = gson.toJson(paramsMap);
+        HashMap<String,Integer> paramsMap1 = new HashMap<>();
+        paramsMap1.put("stu_id", Integer.valueOf(mControlMainActivity.mStuId));
+        String strEntity1 = gson.toJson(paramsMap1);
+        strEntity1 = strEntity1.replace("{","");
+        strEntity = strEntity.replace("}","," + strEntity1);
+        RequestBody body = RequestBody.create(okhttp3.MediaType.parse("application/json;charset=UTF-8"),strEntity);
+        Call<ModelObservableInterface.BaseBean> call = modelObservableInterface.checkModifyingTel(body);
+        call.enqueue(new Callback<ModelObservableInterface.BaseBean>() {
+            @Override
+            public void onResponse(Call<ModelObservableInterface.BaseBean> call, Response<ModelObservableInterface.BaseBean> response) {
+                if (response.code() != 200){
+                    Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                ModelObservableInterface.BaseBean loginBean = response.body();//得到解析后的LoginBean对象
+                if (loginBean == null){
+                    Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (loginBean.getErrorMsg().equals("ok")){
+                    setPersonalInfoDatas(null,null,null,phone,null,null);
+                    return;
+                } else {
+                    Toast.makeText(mControlMainActivity,"修改失败，该手机号已被其他学员使用！",Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ModelObservableInterface.BaseBean> call, Throwable t) {
+                Toast.makeText(mControlMainActivity,"修改个人信息失败",Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void getAboutUsInfoDatas() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+        final Observable<AboutUsInfoBean> data =
+                modelObservableInterface.queryAboutUsInfo();
+        data.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Observer<AboutUsInfoBean>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(AboutUsInfoBean value) {
+                        //网络请求数据成功
+                        AboutUsInfoBean.AboutUsInfoDataBean aboutUsInfoDataBean = value.getData();
+                        if (aboutUsInfoDataBean == null || mview == null){
+                            return;
+                        }
+                        if (aboutUsInfoDataBean.newversion != null) {
+                            TextView aboutus_checknewversion_new_textview = mview.findViewById(R.id.aboutus_checknewversion_new_textview);
+                            aboutus_checknewversion_new_textview.setText(aboutUsInfoDataBean.newversion);
+                        }
+                        if (aboutUsInfoDataBean.sla != null){
+                            TextView aboutus_agreeTerms = mview.findViewById(R.id.aboutus_agreeTerms);
+                            aboutus_agreeTerms.setText(aboutUsInfoDataBean.sla);
+                        }
+                        if (aboutUsInfoDataBean.privacypolicy != null){
+                            TextView aboutus_agreeTerms_1 = mview.findViewById(R.id.aboutus_agreeTerms_1);
+                            aboutus_agreeTerms_1.setText(aboutUsInfoDataBean.privacypolicy);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e("TAG", "onError: "+e.getMessage()+"" + "Http:" + "http://192.168.30.141:8080/app/homePage/queryHomePageInfo/");
+                        Toast.makeText(mControlMainActivity,"获取关于我们信息超时",Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+    //上传头像
+    public void ModifyingHead(String imgPath) {
+        if (mControlMainActivity.mStuId.equals("")){
+            return;
+        }
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .addInterceptor(chain -> {
+                    String uu = UUID.randomUUID().toString();
+                    Request request = chain.request()
+                            .newBuilder()
+                            .addHeader("Content-Type", "multipart/form-data; boundary=" + uu)
+                            .build();
+                    return chain.proceed(request);
+                }).build();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(httpClient)
+                .build();
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+        File file = new File(imgPath);
+        Gson gson = new Gson();
+        HashMap<String,Integer> paramsMap = new HashMap<>();
+        paramsMap.put("stu_id", Integer.valueOf(mControlMainActivity.mStuId));
+        String strEntity = gson.toJson(paramsMap);
+        RequestBody body = RequestBody.create(okhttp3.MediaType.parse("multipart/form-data"),strEntity);
+        Map<String, RequestBody> params = new HashMap<>() ;
+        RequestBody requestBody = RequestBody.create(MediaType.parse("multipart/form-data"),file);
+        params.put("multipartFile\"; filename=\""+ file.getName(), requestBody);
+        params.put("str", body);
+        retrofit2.Call call = modelObservableInterface.modifyingHead(params);
+        call.enqueue(new retrofit2.Callback() {
+            @Override
+            public void onResponse(retrofit2.Call call, retrofit2.Response response) {
+                int code = response.code();
+                if (code == 200) {
+                    Toast.makeText(mControlMainActivity, "上传头像成功!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(mControlMainActivity, "上传头像失败!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call call, Throwable t) {
+                Log.d("Tag",t.getMessage().toString());
+//                mControlMainActivity.setmState("");
+//                mIsPublish = true;
+                Toast.makeText(mControlMainActivity, "上传头像失败!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void UpdateStuPass(String origin_stu_pass,String now_stu_pass) {
+        if (mControlMainActivity.mStuId.equals("") ||origin_stu_pass.equals("") || now_stu_pass.equals("")){
+            return;
+        }
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+
+        Gson gson = new Gson();
+
+        HashMap<String,String> paramsMap = new HashMap<>();
+        paramsMap.put("origin_stu_pass",origin_stu_pass);
+        paramsMap.put("now_stu_pass",now_stu_pass);
+        String strEntity = gson.toJson(paramsMap);
+        HashMap<String,Integer> paramsMap1 = new HashMap<>();
+        paramsMap1.put("stu_id", Integer.valueOf(mControlMainActivity.mStuId));
+        String strEntity1 = gson.toJson(paramsMap1);
+        strEntity1 = strEntity1.replace("{","");
+        strEntity = strEntity.replace("}","," + strEntity1);
+        RequestBody body = RequestBody.create(okhttp3.MediaType.parse("application/json;charset=UTF-8"),strEntity);
+        Call<ModelObservableInterface.BaseBean> call = modelObservableInterface.updateStuPass(body);
+        call.enqueue(new Callback<ModelObservableInterface.BaseBean>() {
+            @Override
+            public void onResponse(Call<ModelObservableInterface.BaseBean> call, Response<ModelObservableInterface.BaseBean> response) {
+                ModelObservableInterface.BaseBean loginBean = response.body();//得到解析后的LoginBean对象
+                if (loginBean == null){
+                    Toast.makeText(mControlMainActivity,"修改密码失败",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (loginBean.getErrorCode() == 200 ){
+                    Toast.makeText(mControlMainActivity,"修改密码成功",Toast.LENGTH_LONG).show();
+                    getPersonalInfoDatas();
+                    mControlMainActivity.onClickSettingUpdatePasswordReturn(mview);
+                    return;
+                } else if (loginBean.getErrorCode() == 203 ){
+                    Toast.makeText(mControlMainActivity,loginBean.getErrorMsg(),Toast.LENGTH_LONG).show();
+                    return;
+                } else {
+                    Toast.makeText(mControlMainActivity,"修改密码失败",Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ModelObservableInterface.BaseBean> call, Throwable t) {
+                Toast.makeText(mControlMainActivity,"修改密码失败",Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    public static class PersonalInfoBean{
+        private PersonalInfoDataBean data;
+        private int code;
+        private String msg;
+
+        public PersonalInfoDataBean getData() {
+            return data;
+        }
+
+        public void setData(PersonalInfoDataBean data) {
+            this.data = data;
+        }
+
+        public int getErrorCode() {
+            return code;
+        }
+
+        public void setErrorCode(int code) {
+            this.code = code;
+        }
+
+        public String getErrorMsg() {
+            return msg;
+        }
+
+        public void setErrorMsg(String msg) {
+            this.msg = msg;
+        }
+        public static class PersonalInfoDataBean {
+            private String autograph;       //个人签名
+            private String nickname;        //用户昵称
+            private String stu_name;            //姓名
+            private String head;          //用户头像
+            private String tel;           //手机号码
+            private String login_number;    //账号
+            private String ID_number;       //身份证号码
+            private String email;           //邮箱
+        }
+    }
+
+    public static class AboutUsInfoBean{
+        private AboutUsInfoDataBean data;
+        private int code;
+        private String msg;
+
+        public AboutUsInfoDataBean getData() {
+            return data;
+        }
+
+        public void setData(AboutUsInfoDataBean data) {
+            this.data = data;
+        }
+
+        public int getErrorCode() {
+            return code;
+        }
+
+        public void setErrorCode(int code) {
+            this.code = code;
+        }
+
+        public String getErrorMsg() {
+            return msg;
+        }
+
+        public void setErrorMsg(String msg) {
+            this.msg = msg;
+        }
+        public static class AboutUsInfoDataBean {
+            private String newversion;       //新版本号
+            private String sla;        //服务协议
+            private String privacypolicy;            //隐私保护指引
+
+            public String getNewversion() {
+                return newversion;
+            }
+
+            public void setNewversion(String newversion) {
+                this.newversion = newversion;
+            }
+
+            public String getSla() {
+                return sla;
+            }
+
+            public void setSlaurl(String sla) {
+                this.sla = sla;
+            }
+
+            public String getPrivacypolicy() {
+                return privacypolicy;
+            }
+
+            public void setPrivacypolicy(String privacypolicy) {
+                this.privacypolicy = privacypolicy;
+            }
+        }
+    }
 }

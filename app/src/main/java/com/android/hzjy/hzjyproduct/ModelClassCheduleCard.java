@@ -59,13 +59,13 @@ public class ModelClassCheduleCard extends Fragment implements
             return;
         }
         HideAllLayout();
-        if (mClasschedulecardView == null) {
+//        if (mClasschedulecardView == null) {
             mClasschedulecardView = LayoutInflater.from(mControlMainActivity).inflate(R.layout.fragment_classchedulecard1, null);
             CalendarView calendarView = mClasschedulecardView.findViewById(R.id.calendarView);
 //        calendarView.setThemeColor(Color.YELLOW,Color.YELLOW);
             calendarView.setOnDateSelectedListener(this);
             calendarView.setOnYearChangeListener(this);
-        }
+//        }
         if (context.equals("首页")){
             LinearLayout classchedulecard_title_layout = mView.findViewById(R.id.classchedulecard_title_layout);
             RelativeLayout.LayoutParams rl = (RelativeLayout.LayoutParams) classchedulecard_title_layout.getLayoutParams();
@@ -79,7 +79,7 @@ public class ModelClassCheduleCard extends Fragment implements
         }
         LinearLayout classchedulecard_content = mView.findViewById(R.id.classchedulecard_content);
         classchedulecard_content.addView(mClasschedulecardView);
-        CalendarView calendarView = mClasschedulecardView.findViewById(R.id.calendarView);
+//        CalendarView calendarView = mClasschedulecardView.findViewById(R.id.calendarView);
         ModelGroupRecyclerView recyclerView = mClasschedulecardView.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(mControlMainActivity));
         ModelGroupItemDecoration modelGroupItemDecoration = new ModelGroupItemDecoration<String,ClassBean>();

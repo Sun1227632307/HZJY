@@ -22,7 +22,10 @@ public class ModelSearchRecordSQLiteOpenHelper extends SQLiteOpenHelper {
         super(context, name, factory, version);
     }
 
-    private static synchronized ModelSearchRecordSQLiteOpenHelper getInstance() {
+    public static synchronized ModelSearchRecordSQLiteOpenHelper getInstance(Context context) {
+        if (context != null){
+            mControlMainActivity = (ControlMainActivity) context;
+        }
         if (mControlMainActivity == null){
             return null;
         }
@@ -39,7 +42,7 @@ public class ModelSearchRecordSQLiteOpenHelper extends SQLiteOpenHelper {
             mControlMainActivity = (ControlMainActivity) context;
         }
         if (db == null) {
-            db = getInstance().getWritableDatabase(SECRET_KEY);
+            db = getInstance(mControlMainActivity).getWritableDatabase(SECRET_KEY);
         }
         return db;
     }
@@ -49,7 +52,7 @@ public class ModelSearchRecordSQLiteOpenHelper extends SQLiteOpenHelper {
             mControlMainActivity = (ControlMainActivity) context;
         }
         if (db == null) {
-            db = getInstance().getReadableDatabase(SECRET_KEY);
+            db = getInstance(mControlMainActivity).getReadableDatabase(SECRET_KEY);
         }
         return db;
     }
@@ -185,7 +188,15 @@ public class ModelSearchRecordSQLiteOpenHelper extends SQLiteOpenHelper {
                 "  `video_download_url` varchar(200) DEFAULT NULL ,\n" +                                       //下载链接
                 "  `video_download_name` varchar(64) DEFAULT NULL ,\n" +                                       //视频原名称
                 "  `video_download_localname` varchar(64) DEFAULT NULL ,\n" +                                  //视频本地存储名称（时间戳加原名称）
-                "  `section_id` int(11) DEFAULT NULL \n" +                                                     //节id
+                "  `chapter_id` int(11) DEFAULT NULL  ,\n" +                                                     //章id
+                "  `section_id` int(11) DEFAULT NULL  ,\n" +                                                     //节id
+                "  `video_len` int(200) DEFAULT NULL \n" +                                                     //视频总长度（）
+                ") ;");
+        //创建token存储表
+        db.execSQL("CREATE TABLE IF NOT EXISTS `token_table` (\n" +
+                "  `token_id` integer NOT NULL primary key AUTOINCREMENT ,\n" +                       //表id
+                "  `token` varchar(200) DEFAULT NULL,\n" +                                       //token
+                "  `stu_id` varchar(200) DEFAULT NULL" +                                            //学生id
                 ") ;");
     }
 

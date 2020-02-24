@@ -44,8 +44,7 @@ public class ControllerCustomRoundAngleImageView extends AppCompatImageView {
     public ControllerCustomRoundAngleImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         this.setScaleType(ScaleType.FIT_XY);
-        TypedArray ta = context.obtainStyledAttributes(attrs,
-                R.styleable.ControllerCustomRoundAngleImageView, defStyle, 0);
+        TypedArray ta = context.obtainStyledAttributes(attrs,R.styleable.ControllerCustomRoundAngleImageView, defStyle, 0);
         if (ta != null){
             mRadius = ta.getDimension(R.styleable.ControllerCustomRoundAngleImageView_image_radius, 0);
             mShadowRadius = ta.getDimension(R.styleable.ControllerCustomRoundAngleImageView_image_shadow_radius, 0);

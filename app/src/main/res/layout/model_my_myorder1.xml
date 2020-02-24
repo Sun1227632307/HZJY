@@ -67,7 +67,7 @@
             android:textColor="#999999"
             android:layout_marginTop="@dimen/dp15"
             android:layout_marginLeft="@dimen/dp13"
-            android:layout_toLeftOf="@id/modelmy_myorder1_ordermoney"
+            android:layout_toLeftOf="@+id/modelmy_myorder1_ordermoney"
             android:layout_alignBottom="@id/modelmy_myorder1_ordernumbertitle"
             android:layout_below="@id/modelmy_myorder1_ordername"/>
         <TextView

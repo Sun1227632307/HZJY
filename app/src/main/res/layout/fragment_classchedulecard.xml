@@ -82,7 +82,7 @@
         android:text="今日课次："
         android:textSize="@dimen/textsize13"
         android:textColor="#999999"
-        android:layout_toLeftOf="@id/classchedulecard_classnum"
+        android:layout_toLeftOf="@+id/classchedulecard_classnum"
         android:layout_alignTop="@id/classchedulecard_weekNum"/>
     <TextView
         android:id="@+id/classchedulecard_classnum"

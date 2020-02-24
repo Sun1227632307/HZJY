@@ -10,6 +10,6 @@
         android:layout_height="match_parent"
         android:background="@color/network_tip"
         android:divider="@color/white"
-        android:dividerHeight="1dp"></ListView>
+        android:dividerHeight="1dp"/>
 
 </LinearLayout>

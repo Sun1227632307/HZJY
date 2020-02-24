@@ -236,3 +236,7 @@
     -ignorewarnings
 
 
+-keep class com.alivc.**{*;}
+-keep class com.aliyun.**{*;}
+-dontwarn com.alivc.**
+-dontwarn com.aliyun.**

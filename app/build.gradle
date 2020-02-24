@@ -8,7 +8,7 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
     defaultConfig {
-        applicationId "com.example.HZJY.HZJYProduct"
+        applicationId "com.android.hzjy.hzjyproduct"
 //        minSdkVersion 15
 //        targetSdkVersion 28
 //        versionCode 1
@@ -27,12 +27,16 @@ android {
         }
         multiDexEnabled true
         ndk {
-            abiFilters "armeabi-v7a", "x86", "armeabi"
+            abiFilters "armeabi-v7a", "x86", "armeabi", 'arm64-v8a'
         }
 
         vectorDrawables.useSupportLibrary = true
 
-
+        manifestPlaceholders = [
+                JPUSH_PKGNAME : applicationId,
+                JPUSH_APPKEY : "8d9b684ff8260344f8d46780", //JPush 上注册的包名对应的 Appkey.
+                JPUSH_CHANNEL : "developer-default", //暂时填写默认值即可.
+        ]
     }
     buildTypes {
         release {
@@ -67,6 +71,9 @@ android {
             dirs 'libs'
         }
     }
+
+    useLibrary 'org.apache.http.legacy'
+
     buildToolsVersion '28.0.3'
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -88,9 +95,25 @@ android {
         // but continue the build even when errors are found:
         abortOnError false
     }
+
+    signingConfigs {
+        release {//发布版本的签名配置
+           // keyAlias 'huozhongedu.keystore'
+           // keyPassword 'huozhongedu20180403'
+            //storeFile file('G:/ProjectProduct/branches/20191217-003/HZJYProduct/keystore/huozhongedu.keystore')
+            //storePassword 'huozhongedu20180403'
+        }
+
+        debug {//调试版本的签名配置
+         //   storeFile file('G:/ProjectProduct/branches/20191217-003/HZJYProduct/keystore/huozhongedu.keystore')
+           // keyAlias 'huozhongedu.keystore'
+           // storePassword 'huozhongedu20180403'
+           // keyPassword 'huozhongedu20180403'
+        }
+    }
 }
 def EXCLUDE_JAR_LIST = ['cube-sdk', 'support-v4-r7-source', 'ultra-ptr', 'support-annotation', 'ptr-lib']
-task copyLibs << {
+task copyLibs <<{
     // copy jars
     copy {
         from configurations.compile
@@ -156,10 +179,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-//    implementation 'in.srain.cube:clog:1.0.2'
     implementation 'in.srain.cube:ultra-ptr:1.0.11'
-//    implementation 'in.srain.cube:cube-sdk:1.0.44.39-SNAPSHOT@aar'
-//    implementation 'in.srain.cube:cube-sdk:1.0.44.38'
     implementation files('libs/dom4j-1.6.1.jar')
     implementation 'com.github.bumptech.glide:glide:4.9.0'
     //动态权限申请库
@@ -191,14 +211,7 @@ dependencies {
     implementation 'com.zhy:mpermission-api:1.0.0'
 
     implementation 'com.google.code.gson:gson:2.8.0'
-//    implementation 'com.github.bumptech.glide:glide:4.5.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.5.0'
-//    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
-//    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
-//    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
-//    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-//    implementation 'io.reactivex.rxjava2:rxjava:2.1.0'
-//    implementation 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
 
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
@@ -209,12 +222,30 @@ dependencies {
     implementation 'org.nanohttpd:nanohttpd:2.2.0'
     implementation 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
 
+    //RecycView的上拉刷新下拉加载依赖
+    implementation 'com.scwang.smartrefresh:SmartRefreshLayout:1.1.0-alpha-22'
+    implementation 'com.scwang.smartrefresh:SmartRefreshHeader:1.1.0-alpha-22'
+
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.squareup.okhttp3:okhttp:3.4.2'
     implementation 'com.chauthai.swipereveallayout:swipe-reveal-layout:1.2.2'
     // 支付宝 SDK AAR 包所需的配置
     implementation (name: 'alipaySdk-15.6.8-20191021122514', ext: 'aar')
     api 'com.tencent.mm.opensdk:wechat-sdk-android-without-mta:+'
+
+
+    implementation 'com.alibaba:fastjson:1.1.70.android'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.8.1'
+
+    //饺子视频播放器
+    implementation 'cn.jzvd:jiaozivideoplayer:6.2.12'
+
+    //阿里云播放器的两个依赖
+    implementation 'com.alivc.conan:AlivcConan:0.9.5'
+    implementation (name: 'AliyunPlayer-4.7.3-full', ext: 'aar')
+    //极光推送
+    implementation 'cn.jiguang.sdk:jpush:3.5.4'  // 此处以JPush 3.5.4 版本为例。
+    implementation 'cn.jiguang.sdk:jcore:2.2.6'  // 此处以JCore 2.2.6 版本为例。
 }
 //configurations.all {
 //    resolutionStrategy.eachDependency { DependencyResolveDetails details ->

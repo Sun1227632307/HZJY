@@ -6,6 +6,7 @@ buildscript {
 //        mavenCentral()
         google()
         jcenter()
+        maven { url "http://maven.aliyun.com/nexus/content/repositories/releases" }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.2.0'
@@ -26,13 +27,14 @@ allprojects {
         google()
         jcenter()
         maven { url 'https://jitpack.io' }
+        maven { url "http://maven.aliyun.com/nexus/content/repositories/releases" }
     }
 }
 
 ext {
     compileSdkVersion = 28
     buildToolsVersion = '28.0.3'
-    minSdkVersion = 16
+    minSdkVersion = 19
     targetSdkVersion = 28
     versionCode = 1
     versionName = "1.0"

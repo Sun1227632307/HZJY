@@ -12,8 +12,8 @@ import android.view.animation.LinearInterpolator;
  * EndListener： 动画结束的时候通过此监听器来做一些处理
  * @data: 2018/2/2  18:02
  */
-
-public class ModelAnimUtil {
+//动画工具类
+public class  ModelAnimUtil {
 
     private ValueAnimator valueAnimator;
     private UpdateListener updateListener;

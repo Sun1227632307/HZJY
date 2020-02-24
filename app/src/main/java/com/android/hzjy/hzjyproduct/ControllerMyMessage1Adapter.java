@@ -126,7 +126,7 @@ public class ControllerMyMessage1Adapter extends ArrayAdapter<ControllerMyMessag
         TextView modelmy_mymessage1_message ;
         TextView modelmy_mymessage1_messagecount ;
     }
-
+    //我的消息
     public static class MyMessageInfo {
         String modelmy_mymessage1_coverurl;
         String modelmy_mymessage1_name;

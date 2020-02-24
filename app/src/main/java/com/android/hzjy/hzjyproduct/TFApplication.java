@@ -1,17 +1,25 @@
 package com.android.hzjy.hzjyproduct;
 
 import android.app.Application;
+import android.util.Log;
+
 import com.android.hzjy.hzjyproduct.consts.MainConsts;
 import com.android.hzjy.hzjyproduct.util.ActivityStacks;
 import com.talkfun.sdk.log.TalkFunLogger;
 import com.talkfun.sdk.offline.PlaybackDownloader;
 import com.tencent.bugly.crashreport.CrashReport;
 
+import cn.jpush.android.api.JPushInterface;
+
 public class TFApplication extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
+        JPushInterface.setDebugMode(true); 	// 设置开启日志,发布时请关闭日志
+        JPushInterface.init(this);     		// 初始化 JPush
+        String rid = JPushInterface.getRegistrationID(this);
+        Log.e("rid","rid" + rid);
         //初始化点播下载
         initPlaybackDownLoader();
         TalkFunLogger.setLogLevel(TalkFunLogger.LogLevel.ALL);

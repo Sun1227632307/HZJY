@@ -44,18 +44,20 @@
             android:textColor="#999999"
             android:layout_weight="1"
             android:textSize="@dimen/textsize14"/>
+
         <TextView
             android:id="@+id/answerdetails_child_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/textsize15"
-            android:textColor="#666666"
-            android:text="这个老师特别好，知识讲解很详细。"
+            android:layout_below="@id/answerdetails_child_name"
+            android:layout_alignStart="@+id/answerdetails_child_content1"
             android:layout_marginTop="@dimen/dp5"
             android:layout_marginRight="@dimen/dp13"
+            android:layout_marginBottom="@dimen/dp20"
             android:lineSpacingExtra="@dimen/dp5"
-            android:layout_below="@id/answerdetails_child_name"
-            android:layout_marginBottom="@dimen/dp20"/>
+            android:text="这个老师特别好，知识讲解很详细。"
+            android:textColor="#666666"
+            android:textSize="@dimen/textsize15" />
     </LinearLayout>
     <View
         android:id="@+id/answerdetails_child_line"

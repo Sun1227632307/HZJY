@@ -1,9 +1,13 @@
 package com.android.hzjy.hzjyproduct;
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -11,25 +15,76 @@ import android.net.ParseException;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.bottomnavigation.LabelVisibilityMode;
 import android.support.design.widget.BottomNavigationView;
 import android.app.Fragment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.aliyun.player.IPlayer;
+import com.aliyun.player.bean.ErrorCode;
+import com.aliyun.player.nativeclass.MediaInfo;
+import com.aliyun.player.nativeclass.PlayerConfig;
+import com.aliyun.player.source.UrlSource;
+import com.aliyun.player.source.VidSts;
+import com.aliyun.private_service.PrivateService;
+//import com.aliyun.svideo.common.utils.ToastUtils;
+//import com.aliyun.utils.VcPlayerLog;
+//import com.aliyun.vodplayerview.constants.PlayParameter;
+//import com.aliyun.vodplayerview.listener.OnChangeQualityListener;
+//import com.aliyun.vodplayerview.listener.OnChangeScreenModeListener;
+//import com.aliyun.vodplayerview.listener.OnReturnListener;
+//import com.aliyun.vodplayerview.listener.OnStoppedListener;
+//import com.aliyun.vodplayerview.listener.RefreshStsCallback;
+//import com.aliyun.vodplayerview.playlist.AlivcVideoInfo;
+//import com.aliyun.vodplayerview.utils.Common;
+//import com.aliyun.vodplayerview.utils.FixedToastUtils;
+//import com.aliyun.vodplayerview.utils.VidStsUtil;
+//import com.aliyun.vodplayerview.utils.database.LoadDbDatasListener;
+//import com.aliyun.vodplayerview.utils.download.AliyunDownloadInfoListener;
+//import com.aliyun.vodplayerview.utils.download.AliyunDownloadManager;
+//import com.aliyun.vodplayerview.utils.download.AliyunDownloadMediaInfo;
+//import com.aliyun.vodplayerview.view.choice.AlivcShowMoreDialog;
+//import com.aliyun.vodplayerview.view.control.ControlView;
+//import com.aliyun.vodplayerview.view.download.AddDownloadView;
+//import com.aliyun.vodplayerview.view.download.AlivcDialog;
+//import com.aliyun.vodplayerview.view.download.AlivcDownloadMediaInfo;
+//import com.aliyun.vodplayerview.view.download.DownloadChoiceDialog;
+//import com.aliyun.vodplayerview.view.download.DownloadDataProvider;
+//import com.aliyun.vodplayerview.view.download.DownloadView;
+//import com.aliyun.vodplayerview.view.gesturedialog.BrightnessDialog;
+//import com.aliyun.vodplayerview.view.more.AliyunShowMoreValue;
+//import com.aliyun.vodplayerview.view.more.ShowMoreView;
+//import com.aliyun.vodplayerview.view.more.SpeedValue;
+//import com.aliyun.vodplayerview.view.tipsview.ErrorInfo;
+//import com.aliyun.vodplayerview.widget.AliyunScreenMode;
+//import com.aliyun.vodplayerview.widget.AliyunVodPlayerView;
 import com.android.hzjy.hzjyproduct.activity.LoginJumpActivity;
 import com.android.hzjy.hzjyproduct.consts.MainConsts;
 import com.android.hzjy.hzjyproduct.consts.PlayType;
@@ -40,20 +95,37 @@ import com.android.hzjy.hzjyproduct.util.ActivityUtil;
 import com.talkfun.sdk.http.PreDataRequestManager;
 import com.talkfun.sdk.model.PreDataForPlaybackInitModel;
 
+import net.sqlcipher.Cursor;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cn.jpush.android.api.JPushInterface;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import pub.devrel.easypermissions.EasyPermissions;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by dayuer on 19/7/2.
@@ -66,10 +138,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
     private String mPage = "";
     private String mBeforePage = "";
     private ControlMainActivity mThis;
-    private String mSMSCode = ""; //验证码test
-    private UserInfo mUserInfo = new UserInfo();
     private BottomNavigationView mBottomNavigationView;
-//    private String[] permissions = {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     /**
      * 6.0版本检测并申请开启摄像头、音频录制、扩展卡读写等权限*/
     private final String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -79,26 +148,50 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
     private long firstTime = 0;
     //订单
     private ModelOrderDetails modelOrderDetails = null;
+    //token
+    public String mToken = "";
+    public String mStuId = "";
 
     private class MenuItemInfo {
         String mName;  //按钮名称
         int mItemId;   //按钮标识（1：首页 2：课程包 3：课程表 4：我的）
         int mOrder;    //按钮排序
     }
+
+    private final        int CUPREQUEST        = 50;
+    private final        int CAMERA            = 10;
+    private final        int ALBUM             = 20;
+    private Uri uritempFile;
+    private String          picPath;
+    private File            mOutImage;
+    private HttpRequest httpRequest;
+
+    //按键反应状态
+    private String mState = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        JPushInterface.setAlias(this.getApplicationContext(),1,"1");
+        //copyAssets();
         ModelStatusBarUtil.setStatusBarColor(this,R.color.white);
 //        ModelViewUtils.setImmersionStateMode(this);
         setContentView(R.layout.activity_main);
-        mUserInfo.mUserLoginState = "1"; //登录状态  0:未登录  1：已登录
-        mUserInfo.mUserHeadUrl = ""; //头像
-        mUserInfo.mUserName = "dayuer"; //用户名
-        mUserInfo.mUserIntroduce = "一名程序员"; //个人介绍
-        mUserInfo.mUserId = "15116936402";
-        mUserInfo.mUserEmail = "xiewenyu@huozhongjiaoyu.com";
-        mUserInfo.mUserTeleNum = "13520093734";
-        mUserInfo.mUserIdNum = "230516395463633251";
+        ModelSearchRecordSQLiteOpenHelper sqLiteOpenHelper = ModelSearchRecordSQLiteOpenHelper.getInstance(ControlMainActivity.this);
+        sqLiteOpenHelper.getWritableDatabase(ControlMainActivity.this);
+        //从本地查询token
+        Cursor cursor = ModelSearchRecordSQLiteOpenHelper.getReadableDatabase(mThis).rawQuery(
+                "select * from token_table ", null);
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                int tokenIndex = cursor.getColumnIndex("token");
+                int stu_idIndex = cursor.getColumnIndex("stu_id");
+                mToken = cursor.getString(tokenIndex);
+                mStuId = cursor.getString(stu_idIndex);
+                break;
+            }
+            cursor.close();
+        }
         mThis = this;
         mBottomNavigationView = findViewById(R.id.nav_view);
         mBottomNavigationView.setLabelVisibilityMode(LabelVisibilityMode.LABEL_VISIBILITY_LABELED); //同时显示底部菜单的图标和文字
@@ -197,11 +290,24 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             }
         }
         getPermission();
+
+        getAndroidVersion(this);//查询是否为最新版本,若不是最新版本弹出对话框
+
+//        //初始化播放器
+//        initAliyunPlayerView();
     }
 
-//    public void FragmentAddCallback(View view,String context){
+    //    public void FragmentAddCallback(View view,String context){
 //    }
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
     //隐藏所有Fragment
     public void hideAllFragment(FragmentTransaction transaction){
         if(mModelHomePage!= null){
@@ -248,30 +354,30 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         }
         return super.dispatchTouchEvent(ev);
     }
-        /**
+    /**
       * 根据EditText所在坐标和用户点击的坐标相对比，来判断是否隐藏键盘，因为当用户点击EditText时没必要隐藏
       *
       * @param v
       * @param event
       * @return
       */
-        private boolean isShouldHideInput(View v, MotionEvent event) {
-            if (v != null && (v instanceof EditText)) {
-                int[] l = {0, 0};
-                v.getLocationInWindow(l);
-                int left = l[0], top = l[1], bottom = top + v.getHeight(), right = left
-                        + v.getWidth();
-                if (event.getX() > left && event.getX() < right
-                        && event.getY() > top && event.getY() < bottom) {
-                    // 点击EditText的事件，忽略它。
-                    return false;
-                } else {
-                    return true;
-                }
+    private boolean isShouldHideInput(View v, MotionEvent event) {
+        if (v != null && (v instanceof EditText)) {
+            int[] l = {0, 0};
+            v.getLocationInWindow(l);
+            int left = l[0], top = l[1], bottom = top + v.getHeight(), right = left
+                    + v.getWidth();
+            if (event.getX() > left && event.getX() < right
+                    && event.getY() > top && event.getY() < bottom) {
+                // 点击EditText的事件，忽略它。
+                return false;
+            } else {
+                return true;
             }
-            // 如果焦点不是EditText则忽略，这个发生在视图刚绘制完，第一个焦点不在EditView上，和用户用轨迹球选择其他的焦点
-            return false;
         }
+        // 如果焦点不是EditText则忽略，这个发生在视图刚绘制完，第一个焦点不在EditView上，和用户用轨迹球选择其他的焦点
+        return false;
+    }
     /**
       * 多种隐藏软件盘方法的其中一种
       *
@@ -318,7 +424,26 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelCommunityAnswer != null){
             mModelCommunityAnswer.onDestroy();
         }
+//        if (mAliyunVodPlayerView != null) {
+//            mAliyunVodPlayerView.onDestroy();
+//            mAliyunVodPlayerView = null;
+//        }
+
+//        if (playerHandler != null) {
+//            playerHandler.removeMessages(DOWNLOAD_ERROR);
+//            playerHandler = null;
+//        }
+
+//        if (commenUtils != null) {
+//            commenUtils.onDestroy();
+//            commenUtils = null;
+//        }
         super.onDestroy();
+//        if (downloadManager != null && downloadDataProvider != null) {
+//            ConcurrentLinkedQueue<AliyunDownloadMediaInfo> downloadMediaInfos = new ConcurrentLinkedQueue<>();
+//            downloadMediaInfos.addAll(downloadDataProvider.getAllDownloadMediaInfo());
+//            downloadManager.stopDownloads(downloadMediaInfos);
+//        }
     }
 
     //点击更多课程
@@ -424,8 +549,8 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
     }
 
     //点击立即登录
-    public void onClickImmediatelyLogin(View view) {
-        if (mUserInfo.mUserLoginState.equals("0")){
+    public void onClickImmediatelyLogin(String type) {
+        if (type.equals("login")){
             mPage = "登录";
             mBeforePage = "我的";
             Page_LogIn();//弹出登录界面
@@ -437,11 +562,11 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
             hideAllFragment(transaction);
             if(mModelSetting == null){
-                mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting,mUserInfo);//"设置"
+                mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting);//"设置"
                 transaction.add(R.id.framepage,mModelSetting);
             } else {
                 transaction.show(mModelSetting);
-                ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,0);
+                ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(0);
             }
             transaction.commit();
         }
@@ -461,6 +586,15 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             return;
         }
         //将账户和密码发给服务器确认
+        ((ModelLogIn)mModelLogIn).LogIn(userId,userPassword);
+    }
+
+    public void LogInSuccess(String token,String stu_id){
+        mToken = token;
+        mStuId = stu_id;
+        ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(this).execSQL("delete from token_table");
+        ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(this).execSQL("insert into token_table(token,stu_id) values('" + token + "','" + stu_id + "')");
+        Page_My();
     }
 
     //点击设置
@@ -472,11 +606,11 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         hideAllFragment(transaction);
         if(mModelSetting == null){
-            mModelSetting = ModelSetting.newInstance(mThis,"设置",R.layout.modelsetting,mUserInfo);//"设置"
+            mModelSetting = ModelSetting.newInstance(mThis,"设置",R.layout.modelsetting);//"设置"
             transaction.add(R.id.framepage,mModelSetting);
         }else{
             transaction.show(mModelSetting);
-            ((ModelSetting)mModelSetting).SettingMainShow(mUserInfo,0);
+            ((ModelSetting)mModelSetting).SettingMainShow(0);
         }
         transaction.commit();
     }
@@ -501,6 +635,33 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mPage.equals("我的课程") && mBeforePage.equals("我的")) { //如果当前界面是我的课程，点击返回按钮，应该返回到我的
             Page_My();
         }
+    }
+
+    //协议界面的返回
+    public void onClickMyClassAgreementReturn(View view) {
+        if (mPage.equals("协议详情") && mBeforePage.contains("我的课程")) { //如果当前界面是我的课程，点击返回按钮，应该返回到我的
+            mBottomNavigationView.setVisibility(View.INVISIBLE);
+            mPage = "我的课程";
+            mBeforePage = "我的";
+            if(mModelMy != null){
+                ((ModelMy) mModelMy).MyClassShow();
+            }
+        } else if (mPage.equals("协议详情") && mBeforePage.equals("我的课程包")) { //如果当前界面是我的课程包，点击返回按钮，应该返回到我的
+            mPage = "我的课程包";
+            mBeforePage = "我的";
+            if(mModelMy != null){
+                ((ModelMy) mModelMy).MyClassPacketShow();
+            }
+        }
+    }
+
+    //协议界面
+    public void onClickMyAgreement() {
+        mBeforePage = mBeforePage + "/" + mPage ;
+        if (mBeforePage.contains("协议详情")){
+            mBeforePage = mBeforePage.substring(0,mBeforePage.indexOf("/协议详情"));
+        }
+        mPage = "协议详情";
     }
 
     //我的课程-课程表
@@ -545,11 +706,11 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                 FragmentTransaction transaction = getFragmentManager().beginTransaction();
                 hideAllFragment(transaction);
                 if(mModelSetting == null){
-                    mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting,mUserInfo);//"设置"
+                    mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting);//"设置"
                     transaction.add(R.id.framepage,mModelSetting);
                 } else {
                     transaction.show(mModelSetting);
-                    ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,0);
+                    ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(0);
                 }
                 transaction.commit();
             }
@@ -577,14 +738,12 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
 
     //点击开始注册
     public void onClickRegisterStart(View view) {
-        //判断验证码是否一致
-        //判断密码是否为6~12位数字或字母
-        //向服务器发送新密码
+        //服务器注册
+        ((ModelLogIn)mModelLogIn).Register();
     }
 
     //点击获取验证码
     public void onClickSMSCodeGet(View view) {
-        mSMSCode = "";
         //向服务器发命令获取验证码
         //修改界面为倒计时
         ((ModelLogIn)mModelLogIn).SMSCodeGet();
@@ -592,7 +751,6 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
 
     //注册-获取验证码
     public void onClickRegisterSMSCodeGet(View view) {
-        mSMSCode = "";
         //向服务器发命令获取验证码
         //修改界面为倒计时
         ((ModelLogIn)mModelLogIn).RegisterSMSCodeGet();
@@ -600,14 +758,13 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
 
     //点击重置密码
     public void onClickResetPassword(View view) {
-        //判断验证码是否一致
-        //判断密码是否为6~12位数字或字母
         //向服务器发送新密码
+        ((ModelLogIn)mModelLogIn).RetrievePassword();
     }
 
     //点击设置-基本信息
     public void onClickSettingEssentialInformation(View view) {
-        if (mUserInfo.mUserLoginState.equals("0")){
+        if (mStuId.equals("")){
             mPage = "登录";
             mBeforePage = "设置";
             //跳转到登录界面
@@ -615,7 +772,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         } else {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -627,7 +784,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             if (mModelSetting != null) {
                 mPage = "设置";
                 mBeforePage = "我的";
-                ((ModelSetting) mModelSetting).SettingMainShow(mUserInfo,0);
+                ((ModelSetting) mModelSetting).SettingMainShow(0);
             }
         }
     }
@@ -644,7 +801,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "修改名称";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingUserNameUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingUserNameUpdateShow();
         }
     }
 
@@ -653,19 +810,17 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
     //点击修改名称-保存
     public void onClickSettingUpdateUserNameSave(View view) {
         if (mModelSetting != null) {
-            String userName = ((ModelSetting)mModelSetting).UserNameGet();
-            //将userName 存储与本地和服务器
-            mUserInfo.mUserName = userName;
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("username");
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -676,12 +831,47 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         }
     }
 
+    //点击修改昵称
+    public void onClickSettingEssentialInformationNick(View view) {
+        if (mModelSetting != null) {
+            mPage = "修改昵称";
+            mBeforePage = "基本信息";
+            ((ModelSetting) mModelSetting).SettingUserNickUpdateShow();
+        }
+    }
+
+    //点击修改昵称-返回(取消修改，无需保存)
+    public void onClickSettingUpdateUserNickReturn(View view) {
+        if (mModelSetting != null) {
+            mPage = "基本信息";
+            mBeforePage = "设置";
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
+        }
+    }
+
+    //点击修改昵称-保存
+    public void onClickSettingUpdateUserNickSave(View view) {
+        if (mModelSetting != null) {
+            mPage = "基本信息";
+            mBeforePage = "设置";
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("usernick");
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
+        }
+    }
+
+    //点击修改昵称-清除所有
+    public void onClickSettingUpdateUserNickClear(View view) {
+        if (mModelSetting != null) {
+            ((ModelSetting)mModelSetting).SettingUserNickUpdateClear();
+        }
+    }
+
     //点击修改签名
     public void onClickSettingEssentialInformationSign(View view) {
         if (mModelSetting != null) {
             mPage = "修改签名";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingPersonalStatementUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingPersonalStatementUpdateShow();
         }
     }
 
@@ -690,19 +880,17 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
     //点击修改签名-保存
     public void onClickSettingUpdatePersonalStatementSave(View view) {
         if (mModelSetting != null) {
-            String personalStatement = ((ModelSetting)mModelSetting).PersonalStatementGet();
-            //将userName 存储与本地和服务器
-            mUserInfo.mUserIntroduce = personalStatement;
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("usersign");
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -711,7 +899,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "修改邮箱";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingEmailUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingEmailUpdateShow();
         }
     }
 
@@ -720,7 +908,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -735,10 +923,10 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                 }
             }
             //将userName 存储与本地和服务器
-            mUserInfo.mUserEmail = email;
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("email");
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -754,7 +942,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "修改电话号码";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingTelNumberUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingTelNumberUpdateShow();
         }
     }
 
@@ -763,7 +951,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -778,10 +966,10 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                 }
             }
             //将telNumber 存储与本地和服务器
-            mUserInfo.mUserTeleNum = telNumber;
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("telnumber");
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -797,7 +985,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "修改证件号码";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingIdNumberUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingIdNumberUpdateShow();
         }
     }
 
@@ -806,7 +994,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -821,10 +1009,10 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                 }
             }
             //将idNumber 存储与本地和服务器
-            mUserInfo.mUserIdNum = idNumber;
+            ((ModelSetting)mModelSetting).UpdataPersonInfo("idnumber");
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
@@ -840,7 +1028,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "修改密码";
             mBeforePage = "基本信息";
-            ((ModelSetting) mModelSetting).SettingPasswordUpdateShow(mUserInfo);
+            ((ModelSetting) mModelSetting).SettingPasswordUpdateShow();
         }
     }
 
@@ -849,27 +1037,13 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "基本信息";
             mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
         }
     }
 
     //点击修改密码-保存密码
     public void onClickSettingUpdatePasswordSave(View view) {
-        int returnCode = ((ModelSetting)mModelSetting).NewPasswordSave();
-        if (returnCode == 0){
-            String newPassword = ((ModelSetting)mModelSetting).NewPasswordGet();
-            //将idNumber 存储与本地和服务器
-            mUserInfo.mUserPassword = newPassword;
-            mPage = "基本信息";
-            mBeforePage = "设置";
-            ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
-        } else if (returnCode == 1){
-            Toast.makeText(this,"原密码输入不正确，请重新输入！",Toast.LENGTH_LONG).show();
-            return;
-        } else if (returnCode == 2){
-            Toast.makeText(this,"新密码两次输入不一致，请重新输入！",Toast.LENGTH_LONG).show();
-            return;
-        }
+        ((ModelSetting)mModelSetting).NewPasswordSave();
     }
 
     //点击设置界面的清理缓存
@@ -915,7 +1089,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         if (mModelSetting != null) {
             mPage = "设置";
             mBeforePage = "我的";
-            ((ModelSetting) mModelSetting).SettingMainShow(mUserInfo,0);
+            ((ModelSetting) mModelSetting).SettingMainShow(0);
         }
     }
 
@@ -929,6 +1103,10 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
 
     //点击设置界面的退出登录
     public void onClickLogout(View view) {
+        mToken = "";
+        mStuId = "";
+        ModelSearchRecordSQLiteOpenHelper.getWritableDatabase(this).execSQL("delete from token_table");
+        Page_My();
     }
 
     //点击打开照相机
@@ -980,8 +1158,17 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
 
     //点击课程主界面查询按钮
     public void onCourseMainSearch(View view){
+        mBeforePage = mBeforePage + "/" + mPage ;
+        mPage = "课程搜索";
         if (mModelCourse != null){
             ((ModelCourse)mModelCourse).CourseMainSearchShow();
+        }
+    }
+
+    //点击课程主界面条件查询按钮
+    public void onCourseMainSearchCondition(View view) {
+        if (mModelCourse != null){
+            ((ModelCourse)mModelCourse).CourseMainSearchConditionShow();
         }
     }
 
@@ -1165,16 +1352,17 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         }
     }
 
-    //我的余额
-    public void onClickMyBalance(View view) {
-    }
+//    //我的余额
+//    public void onClickMyBalance(View view) {
+//    }
 
     //跳转订单详情
-    public View Page_OrderDetails(ModelOrderDetailsInterface modelOrderDetailsInterface){
+    public View Page_OrderDetails(ModelOrderDetailsInterface modelOrderDetailsInterface, CourseInfo courseInfo, CoursePacketInfo coursePacketInfo,
+                                  ModelMy.MyOrderlistBean.DataBean.ListBean mMyOrderListBean){
         if (modelOrderDetails == null){
             modelOrderDetails = new ModelOrderDetails();
         }
-        View view = modelOrderDetails.ModelOrderDetails(modelOrderDetailsInterface,this);
+        View view = modelOrderDetails.ModelOrderDetails(modelOrderDetailsInterface,this,courseInfo,coursePacketInfo,mMyOrderListBean);
         mBeforePage = mBeforePage + "/" + mPage ;
         mPage = "订单详情";
         return view;
@@ -1197,6 +1385,16 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             }
             mPage = beforePageS[beforePageS.length - 1];
         } else if (beforePageS[beforePageS.length - 1].equals("课程包详情")){ //说明上个界面是课程包详情界面
+            mBeforePage = "";
+            for (int i = 0 ; i < beforePageS.length - 1; i ++){
+                if (i == beforePageS.length - 2){
+                    mBeforePage = mBeforePage + beforePageS[i];
+                } else {
+                    mBeforePage = mBeforePage + beforePageS[i] + "/";
+                }
+            }
+            mPage = beforePageS[beforePageS.length - 1];
+        } else if (beforePageS[beforePageS.length - 1].equals("我的订单")){ //说明上个界面是我的订单界面
             mBeforePage = "";
             for (int i = 0 ; i < beforePageS.length - 1; i ++){
                 if (i == beforePageS.length - 2){
@@ -1513,7 +1711,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             transaction.add(R.id.framepage,mModelCourse);
         }else{
             transaction.show(mModelCourse);
-            ((ModelCourse) mModelCourse).CourseMainShow(0);
+            ((ModelCourse) mModelCourse).CourseMainShow();
         }
         transaction.commit();
     }
@@ -1536,11 +1734,11 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         hideAllFragment(transaction);
         if(mModelMy == null){
-            mModelMy = ModelMy.newInstance(mThis,"我的",R.layout.my_layout,mUserInfo);//"我的"
-            ((ModelMy)mModelMy).ModelMyUserInfoSet(mUserInfo);
+            mModelMy = ModelMy.newInstance(mThis,"我的",R.layout.my_layout);//"我的"
             transaction.add(R.id.framepage,mModelMy);
         }else{
-            ((ModelMy)mModelMy).ModelMyUserInfoSet(mUserInfo);
+            ((ModelMy)mModelMy).getPersonalInfoDatas();
+//            ((ModelMy)mModelMy).ModelMyInit();
             transaction.show(mModelMy);
         }
         transaction.commit();
@@ -1553,7 +1751,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         hideAllFragment(transaction);
         if(mModelLogIn == null){
-            mModelLogIn = ModelLogIn.newInstance(mThis,"登录",R.layout.modellogin);//"登录"
+            mModelLogIn = ModelLogIn.newInstance(mThis,R.layout.modellogin);//"登录"
             transaction.add(R.id.framepage,mModelLogIn);
         }else{
             transaction.show(mModelLogIn);
@@ -1619,18 +1817,49 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
         }
     }
 
+    public void setmState(String state){
+        this.mState = state;
+    }
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if (mAliyunVodPlayerView != null) {
+//            boolean handler = mAliyunVodPlayerView.onKeyDown(keyCode, event);
+//            if (!handler) {
+//                return false;
+//            }
+//        }
         String beforePageS[] = mBeforePage.split("/");
         if (keyCode == KeyEvent.KEYCODE_BACK ) {
+            if (mState.equals("发布问答")){
+                Toast.makeText(this,"正在发布问题，请稍后!",Toast.LENGTH_LONG).show();
+                return false;
+            }
             if (beforePageS.length <= 0){
                 return false;
             } else if (beforePageS.length >= 1){
-                if (beforePageS[beforePageS.length - 1].equals("课程包") && mPage.equals("课程包详情")){//说明上个界面是课程包界面
+                if (mPage.equals("协议详情") && mBeforePage.contains("我的课程")) { //如果当前界面是我的课程，点击返回按钮，应该返回到我的
+                    mBottomNavigationView.setVisibility(View.INVISIBLE);
+                    mPage = "我的课程";
+                    mBeforePage = "我的";
+                    if(mModelMy != null){
+                        ((ModelMy) mModelMy).MyClassShow();
+                    }
+                    return true;
+                } else if (mPage.equals("协议详情") && mBeforePage.equals("我的课程包")) { //如果当前界面是我的课程包，点击返回按钮，应该返回到我的
+                    mPage = "我的课程包";
+                    mBeforePage = "我的";
+                    if(mModelMy != null){
+                        ((ModelMy) mModelMy).MyClassPacketShow();
+                    }
+                    return true;
+                } else if (beforePageS[beforePageS.length - 1].equals("课程包") && mPage.equals("课程包详情")){//说明上个界面是课程包界面
                     Page_MoreCoursePacket();
                     return true;
                 } else if (beforePageS[beforePageS.length - 1].equals("课程包") && mPage.equals("课程包搜索")){//说明上个界面是课程包界面
                     Page_MoreCoursePacket();
+                    return true;
+                } else if (beforePageS[beforePageS.length - 1].equals("课程") && mPage.equals("课程搜索")){//说明上个界面是课程界面
+                    Page_Course();
                     return true;
                 } else if (beforePageS[beforePageS.length - 1].equals("首页") && mPage.equals("课程包详情")){ //说明上个界面是首页
                     Page_HomePage();
@@ -1767,7 +1996,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     if (mModelSetting != null) {
                         mPage = "设置";
                         mBeforePage = "我的";
-                        ((ModelSetting) mModelSetting).SettingMainShow(mUserInfo,0);
+                        ((ModelSetting) mModelSetting).SettingMainShow(0);
                     }
                     return true;
                 } else if (mPage.equals("基本信息") && mBeforePage.equals("我的")) { //如果当前界面是设置-基本信息，点击返回按钮，应该返回到我的
@@ -1782,7 +2011,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                         FragmentTransaction transaction = getFragmentManager().beginTransaction();
                         hideAllFragment(transaction);
                         if(mModelSetting == null){
-                            mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting,mUserInfo);//"设置"
+                            mModelSetting = ModelSetting.newInstance(mThis,"设置-基本信息",R.layout.modelsetting);//"设置"
                             transaction.add(R.id.framepage,mModelSetting);
                         } else {
                             transaction.show(mModelSetting);
@@ -1794,49 +2023,56 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
+                    }
+                    return true;
+                } else if (mPage.equals("修改昵称") && mBeforePage.equals("基本信息")) { //如果当前界面是修改昵称，点击返回按钮，应该返回到基本信息
+                    if (mModelSetting != null) {
+                        mPage = "基本信息";
+                        mBeforePage = "设置";
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("修改签名") && mBeforePage.equals("基本信息")) { //如果当前界面是修改签名，点击返回按钮，应该返回到基本信息
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("修改邮箱") && mBeforePage.equals("基本信息")) { //如果当前界面是修改邮箱，点击返回按钮，应该返回到基本信息
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("修改电话号码") && mBeforePage.equals("基本信息")) { //如果当前界面是修改电话号码，点击返回按钮，应该返回到基本信息
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("修改证件号码") && mBeforePage.equals("基本信息")) { //如果当前界面是修改证件号码，点击返回按钮，应该返回到基本信息
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("修改密码") && mBeforePage.equals("基本信息")) { //如果当前界面是修改密码，点击返回按钮，应该返回到基本信息
                     if (mModelSetting != null) {
                         mPage = "基本信息";
                         mBeforePage = "设置";
-                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(mUserInfo,1);
+                        ((ModelSetting)mModelSetting).SettingBaseInfoMainShow(1);
                     }
                     return true;
                 } else if (mPage.equals("关于我们") && mBeforePage.equals("设置")) { //如果当前界面是关于我们，点击返回按钮，应该返回到设置
                     if (mModelSetting != null) {
                         mPage = "设置";
                         mBeforePage = "我的";
-                        ((ModelSetting) mModelSetting).SettingMainShow(mUserInfo,0);
+                        ((ModelSetting) mModelSetting).SettingMainShow(0);
                     }
                     return true;
                 } else if (mPage.equals("课程") && mBeforePage.equals("首页")) { //如果当前界面是课程，点击返回按钮，应该返回到首页
@@ -1913,7 +2149,7 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                 } else if (mPage.equals("我的订单") && mBeforePage.equals("我的")) { //如果当前界面是我的订单，点击返回按钮，应该返回到我的
                     Page_My();
                     return true;
-                } else if (mPage.equals("订单详情") && mBeforePage.equals("我的订单")) { //如果当前界面是订单详情，点击返回按钮，应该返回到我的订单
+                } else if (mPage.equals("订单详情") && mBeforePage.contains("我的订单")) { //如果当前界面是订单详情，点击返回按钮，应该返回到我的订单
                     mPage = "我的订单";
                     mBeforePage = "我的";
                     if(mModelMy != null){
@@ -2284,6 +2520,9 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
                     }
                 }
                 //s : 裁剪后的图片路径  将界面直接跳转到我的，并且将剪切好的头像上传到服务器
+                if (mModelSetting != null){
+                    ((ModelSetting)mModelSetting).ModifyingHead(s);
+                }
                 break;
             default:
                 break;
@@ -2303,13 +2542,6 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             startPhotoZoom(inputUri);
         }
     }
-    private final        int CUPREQUEST        = 50;
-    private final        int CAMERA            = 10;
-    private final        int ALBUM             = 20;
-    private Uri uritempFile;
-    private String          picPath;
-    private File            mOutImage;
-    private HttpRequest httpRequest;
 
     //裁剪
     private void startPhotoZoom(Uri uri) {
@@ -2411,4 +2643,1608 @@ public class ControlMainActivity extends AppCompatActivity  implements EasyPermi
             }
         });
     }
+
+    private void getAndroidVersion(Context context) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ModelObservableInterface.urlHead)
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        ModelObservableInterface modelObservableInterface = retrofit.create(ModelObservableInterface.class);
+        final Observable<ModelObservableInterface.BaseBean> data =
+                modelObservableInterface.queryAndroidVersion();
+        data.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe(new Observer<ModelObservableInterface.BaseBean>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(ModelObservableInterface.BaseBean value) {
+                        //网络请求数据成功
+                        Map<String,Object> data =  value.getData();
+                        String version_num = String.valueOf(data.get("version_num"));
+                        String download_address = String.valueOf(data.get("download_address"));
+                        UpdateVersionController uvc = new UpdateVersionController(context);
+                        uvc.forceCheckUpdateInfo(version_num,download_address);//运行该方法
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e("TAG", "onError: "+e.getMessage()+"" + "Http:" + "http://192.168.30.141:8080/app/homePage/queryHomePageInfo/");
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+
+    //------------------------------------------------------------------------aliyunplayer------------------------------------------------------
+//    private DownloadView dialogDownloadView;        //下载弹出框
+//    private AlivcShowMoreDialog showMoreDialog;   //设置弹出对话框
+//
+//    private SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss.SS");  //时间格式
+//    private List<String> logStrs = new ArrayList<>();   //日志集合
+//
+//    private AliyunScreenMode currentScreenMode = AliyunScreenMode.Small;  //当前窗口模式
+//    private AliyunVodPlayerView mAliyunVodPlayerView = null;  //播放器实例
+//
+//    private ArrayList<AlivcVideoInfo.DataBean.VideoListBean> alivcVideoInfos;
+//    private ErrorInfo currentError = ErrorInfo.Normal;
+//    //判断是否在后台
+//    private boolean mIsInBackground = false;
+//    /**
+//     * get StsToken stats
+//     */
+//    private boolean inRequest;
+//
+//    private Common commenUtils;
+//    private long oldTime;
+//    private long downloadOldTime;
+//    private static String preparedVid;
+//    private DownloadDataProvider downloadDataProvider;
+//    private AliyunDownloadManager downloadManager;
+//
+//    private AliyunScreenMode mCurrentDownloadScreenMode;
+//    private PlayerHandler playerHandler;
+//
+//    /**
+//     * 是否需要展示下载界面,如果是恢复数据,则不用展示下载界面
+//     */
+//    private boolean showAddDownloadView;
+//
+//    /**
+//     * 是否鉴权过期
+//     */
+//    private boolean mIsTimeExpired = false;
+//    /**
+//     * 判断是否在下载中
+//     */
+//    private boolean mDownloadInPrepare = false;
+//
+//    private static final int DOWNLOAD_ERROR = 1;
+//    private static final String DOWNLOAD_ERROR_KEY = "error_key";
+
+//    private void initAliyunPlayerView() {
+////        mAliyunVodPlayerView = (AliyunVodPlayerView) findViewById(com.aliyun.vodplayer.R.id.video_view);
+////        mAliyunVodPlayerView = new AliyunVodPlayerView(ControlMainActivity.this);
+//        mAliyunVodPlayerView.setActivetyContext(this);
+//        //保持屏幕敞亮
+//        mAliyunVodPlayerView.setKeepScreenOn(true);
+////        String sdDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/test_save_cache";
+////        mAliyunVodPlayerView.setPlayingCache(false, sdDir, 60 * 60 /*时长, s */, 300 /*大小，MB*/);
+//        mAliyunVodPlayerView.setTheme(AliyunVodPlayerView.Theme.Blue);
+//
+//        mAliyunVodPlayerView.setOnPreparedListener(new MyPrepareListener(this));
+//        mAliyunVodPlayerView.setNetConnectedListener(new MyNetConnectedListener(this));
+//        mAliyunVodPlayerView.setOnCompletionListener(new MyCompletionListener(this));
+//        mAliyunVodPlayerView.setOnFirstFrameStartListener(new MyFrameInfoListener(this));
+//        mAliyunVodPlayerView.setOnChangeQualityListener(new MyChangeQualityListener(this));
+//        //TODO
+//        mAliyunVodPlayerView.setOnStoppedListener(new MyStoppedListener(this));
+//        mAliyunVodPlayerView.setmOnPlayerViewClickListener(new MyPlayViewClickListener(this));
+//        mAliyunVodPlayerView.setOrientationChangeListener(new MyOrientationChangeListener(this));
+////        mAliyunVodPlayerView.setOnUrlTimeExpiredListener(new MyOnUrlTimeExpiredListener(this));
+//        mAliyunVodPlayerView.setOnTimeExpiredErrorListener(new MyOnTimeExpiredErrorListener(this));
+//        mAliyunVodPlayerView.setOnShowMoreClickListener(new MyShowMoreClickLisener(this));
+//        mAliyunVodPlayerView.setOnPlayStateBtnClickListener(new MyPlayStateBtnClickListener(this));
+//        mAliyunVodPlayerView.setOnSeekCompleteListener(new MySeekCompleteListener(this));
+//        mAliyunVodPlayerView.setOnSeekStartListener(new MySeekStartListener(this));
+//        mAliyunVodPlayerView.setOnScreenBrightness(new MyOnScreenBrightnessListener(this));
+//        mAliyunVodPlayerView.setOnErrorListener(new MyOnErrorListener(this));
+//        mAliyunVodPlayerView.setScreenBrightness(BrightnessDialog.getActivityBrightness(ControlMainActivity.this));
+//        mAliyunVodPlayerView.setSeiDataListener(new MyOnSeiDataListener(this));
+//        mAliyunVodPlayerView.setOnChangeScreenModeListener(new MyOnScreenModeListener(this));
+//        mAliyunVodPlayerView.setOnReturnListener(new MyOnRetuenListener(this));
+//        mAliyunVodPlayerView.enableNativeLog();
+////        mAliyunVodPlayerView.setCirclePlay(true);
+////        mAliyunVodPlayerView.setAutoPlay(true);
+//    }
+//
+//    /**
+//     * 请求sts
+//     */
+//    private void requestVidSts() {
+//        Log.e("scar", "requestVidSts: ");
+//        if (inRequest) {
+//            return;
+//        }
+//        inRequest = true;
+//        if (TextUtils.isEmpty(PlayParameter.PLAY_PARAM_VID)) {
+//            return;
+//        }
+//        Log.e("scar", "requestVidSts:xx ");
+//        VidStsUtil.getVidSts(PlayParameter.PLAY_PARAM_VID, new MyStsListener(this));
+//    }
+//
+//    private static class MyPrepareListener implements IPlayer.OnPreparedListener {
+//
+//        private WeakReference<ControlMainActivity> activityWeakReference;
+//
+//        public MyPrepareListener(ControlMainActivity controlMainActivity) {
+//            activityWeakReference = new WeakReference<>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onPrepared() {
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onPrepared();
+//            }
+//        }
+//    }
+//    private void onPrepared() {
+//        logStrs.add(format.format(new Date()) + getString(com.aliyun.vodplayer.R.string.log_prepare_success));
+//
+////        for (String log : logStrs) {
+////            tvLogs.append(log + "\n");
+////        }
+//        FixedToastUtils.show(ControlMainActivity.this.getApplicationContext(), com.aliyun.vodplayer.R.string.toast_prepare_success);
+//    }
+//
+//    private static class MyStsListener implements VidStsUtil.OnStsResultListener {
+//
+//        private WeakReference<ControlMainActivity> weakActivity;
+//
+//        MyStsListener(ControlMainActivity act) {
+//            weakActivity = new WeakReference<>(act);
+//        }
+//
+//        @Override
+//        public void onSuccess(String vid, final String akid, final String akSecret, final String token) {
+//            ControlMainActivity activity = weakActivity.get();
+//            if (activity != null) {
+//                activity.onStsSuccess(vid, akid, akSecret, token);
+//            }
+//        }
+//
+//        @Override
+//        public void onFail() {
+//            ControlMainActivity activity = weakActivity.get();
+//            if (activity != null) {
+//                activity.onStsFail();
+//            }
+//        }
+//    }
+//    private void onStsSuccess(String mVid, String akid, String akSecret, String token) {
+//        PlayParameter.PLAY_PARAM_VID = mVid;
+//        PlayParameter.PLAY_PARAM_AK_ID = akid;
+//        PlayParameter.PLAY_PARAM_AK_SECRE = akSecret;
+//        PlayParameter.PLAY_PARAM_SCU_TOKEN = token;
+//
+//        mIsTimeExpired = false;
+//
+//        inRequest = false;
+//
+////        // 视频列表数据为0时, 加载列表
+////        if (alivcVideoInfos != null && alivcVideoInfos.size() == 0) {
+////            alivcVideoInfos.clear();
+////            loadPlayList();
+////        }
+//    }
+//    private void onStsFail() {
+//
+//        FixedToastUtils.show(getApplicationContext(), com.aliyun.vodplayer.R.string.request_vidsts_fail);
+//        inRequest = false;
+//        //finish();
+//    }
+//    /**
+//     * 判断是否有网络的监听
+//     */
+//    private class MyNetConnectedListener implements AliyunVodPlayerView.NetConnectedListener {
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyNetConnectedListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onReNetConnected(boolean isReconnect) {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onReNetConnected(isReconnect);
+//            }
+//        }
+//
+//        @Override
+//        public void onNetUnConnected() {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onNetUnConnected();
+//            }
+//        }
+//    }
+//
+//    private void onNetUnConnected() {
+//        currentError = ErrorInfo.UnConnectInternet;
+////        if (aliyunDownloadMediaInfoList != null && aliyunDownloadMediaInfoList.size() > 0) {
+////            ConcurrentLinkedQueue<AliyunDownloadMediaInfo> allDownloadMediaInfo = new ConcurrentLinkedQueue<>();
+////            List<AliyunDownloadMediaInfo> mediaInfos = downloadDataProvider.getAllDownloadMediaInfo();
+////            allDownloadMediaInfo.addAll(mediaInfos);
+////            downloadManager.stopDownloads(allDownloadMediaInfo);
+////        }
+//    }
+//
+//    private void onReNetConnected(boolean isReconnect) {
+//        currentError = ErrorInfo.Normal;
+//        if (isReconnect) {
+////            if (aliyunDownloadMediaInfoList != null && aliyunDownloadMediaInfoList.size() > 0) {
+////                int unCompleteDownload = 0;
+////                for (AliyunDownloadMediaInfo info : aliyunDownloadMediaInfoList) {
+////                    if (info.getStatus() == AliyunDownloadMediaInfo.Status.Stop) {
+////                        unCompleteDownload++;
+////                    }
+////                }
+////
+////                if (unCompleteDownload > 0) {
+////                    FixedToastUtils.show(this, "网络恢复, 请手动开启下载任务...");
+////                }
+////            }
+//            // 如果当前播放列表为空, 网络重连后需要重新请求sts和播放列表, 其他情况不需要
+//            if (alivcVideoInfos != null && alivcVideoInfos.size() == 0) {
+//                VidStsUtil.getVidSts(PlayParameter.PLAY_PARAM_VID, new ControlMainActivity.MyStsListener(this));
+//            }
+//        }
+//    }
+//    private static class MyCompletionListener implements IPlayer.OnCompletionListener {
+//
+//        private WeakReference<ControlMainActivity> activityWeakReference;
+//
+//        public MyCompletionListener(ControlMainActivity controlMainActivity) {
+//            activityWeakReference = new WeakReference<ControlMainActivity>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onCompletion() {
+//
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onCompletion();
+//            }
+//        }
+//    }
+//
+//    private void onCompletion() {
+//        logStrs.add(format.format(new Date()) + getString(com.aliyun.vodplayer.R.string.log_play_completion));
+////        for (String log : logStrs) {
+////            tvLogs.append(log + "\n");
+////        }
+//        FixedToastUtils.show(ControlMainActivity.this.getApplicationContext(), com.aliyun.vodplayer.R.string.toast_play_compleion);
+//
+//        // 当前视频播放结束, 播放下一个视频
+//        if ("vidsts".equals(PlayParameter.PLAY_PARAM_TYPE)) {
+////            onNext();
+//            mAliyunVodPlayerView.rePlay();
+//        }
+//    }
+//    private int currentVideoPosition;
+//    /**
+//     * 播放下一个视频
+//     */
+//    private void onNext() {
+//        if (currentError == ErrorInfo.UnConnectInternet) {
+//            // 此处需要判断网络和播放类型
+//            // 网络资源, 播放完自动波下一个, 无网状态提示ErrorTipsView
+//            // 本地资源, 播放完需要重播, 显示Replay, 此处不需要处理
+//            if ("vidsts".equals(PlayParameter.PLAY_PARAM_TYPE)) {
+//                mAliyunVodPlayerView.showErrorTipView(4014, "-1", "当前网络不可用");
+//            }
+//            return;
+//        }
+//
+//        if (alivcVideoInfos != null) {
+//            currentVideoPosition++;
+//            if (currentVideoPosition > alivcVideoInfos.size() - 1) {
+//                //列表循环播放，如发现播放完成了从列表的第一个开始重新播放
+//                currentVideoPosition = 0;
+//            }
+//
+//            if (alivcVideoInfos.size() > 0) {
+//                AlivcVideoInfo.DataBean.VideoListBean video = alivcVideoInfos.get(currentVideoPosition);
+//                if (video != null) {
+//                    changePlayVidSource(video);
+//                }
+//            }
+//        }
+//    }
+//    /**
+//     * 播放本地资源
+//     */
+//    private void changePlayLocalSource(String url, String title) {
+//        UrlSource urlSource = new UrlSource();
+//        urlSource.setUri(url);
+//        urlSource.setTitle(title);
+//        mAliyunVodPlayerView.setLocalSource(urlSource);
+//    }
+//
+//    /**
+//     * 切换播放vid资源
+//     *
+//     * @param video 要切换的资源
+//     */
+//    private void changePlayVidSource(AlivcVideoInfo.DataBean.VideoListBean video) {
+//        mDownloadInPrepare = true;
+//        VidSts vidSts = new VidSts();
+//        PlayParameter.PLAY_PARAM_VID = video.getVideoId();
+//        mAliyunVodPlayerView.setAutoPlay(!mIsInBackground);
+//        //切换资源重置下载flag
+//        mDownloadInPrepare = false;
+//        /**
+//         * 如果是鉴权过期
+//         */
+//        if (mIsTimeExpired) {
+//            onTimExpiredError();
+//        } else {
+//            vidSts.setVid(PlayParameter.PLAY_PARAM_VID);
+//            vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+//            vidSts.setAccessKeyId(PlayParameter.PLAY_PARAM_AK_ID);
+//            vidSts.setAccessKeySecret(PlayParameter.PLAY_PARAM_AK_SECRE);
+//            vidSts.setSecurityToken(PlayParameter.PLAY_PARAM_SCU_TOKEN);
+//            vidSts.setTitle(video.getTitle());
+//            mAliyunVodPlayerView.setVidSts(vidSts);
+//        }
+//
+//    }
+//
+//    public static class MyOnTimeExpiredErrorListener implements AliyunVodPlayerView.OnTimeExpiredErrorListener {
+//
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnTimeExpiredErrorListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onTimeExpiredError() {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onTimExpiredError();
+//            }
+//        }
+//    }
+//
+//    private void onUrlTimeExpired(String oldVid, String oldQuality) {
+//        //requestVidSts();
+//        VidSts vidSts = VidStsUtil.getVidSts(oldVid);
+//        PlayParameter.PLAY_PARAM_VID = vidSts.getVid();
+//        PlayParameter.PLAY_PARAM_AK_SECRE = vidSts.getAccessKeySecret();
+//        PlayParameter.PLAY_PARAM_AK_ID = vidSts.getAccessKeyId();
+//        PlayParameter.PLAY_PARAM_SCU_TOKEN = vidSts.getSecurityToken();
+//
+//        if (mAliyunVodPlayerView != null) {
+//            mAliyunVodPlayerView.setVidSts(vidSts);
+//        }
+//    }
+//
+//    /**
+//     * 鉴权过期
+//     */
+//    private void onTimExpiredError() {
+//        VidStsUtil.getVidSts(PlayParameter.PLAY_PARAM_VID, new ControlMainActivity.RetryExpiredSts(this));
+//    }
+//    /**
+//     * 因为鉴权过期,而去重新鉴权
+//     */
+//    private static class RetryExpiredSts implements VidStsUtil.OnStsResultListener {
+//
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public RetryExpiredSts(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onSuccess(String vid, String akid, String akSecret, String token) {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onStsRetrySuccess(vid, akid, akSecret, token);
+//            }
+//        }
+//
+//        @Override
+//        public void onFail() {
+//
+//        }
+//    }
+//    private void onStsRetrySuccess(String mVid, String akid, String akSecret, String token) {
+//        PlayParameter.PLAY_PARAM_VID = mVid;
+//        PlayParameter.PLAY_PARAM_AK_ID = akid;
+//        PlayParameter.PLAY_PARAM_AK_SECRE = akSecret;
+//        PlayParameter.PLAY_PARAM_SCU_TOKEN = token;
+//
+//        inRequest = false;
+//        mIsTimeExpired = false;
+//
+//        VidSts vidSts = new VidSts();
+//        vidSts.setVid(PlayParameter.PLAY_PARAM_VID);
+//        vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+//        vidSts.setAccessKeyId(PlayParameter.PLAY_PARAM_AK_ID);
+//        vidSts.setAccessKeySecret(PlayParameter.PLAY_PARAM_AK_SECRE);
+//        vidSts.setSecurityToken(PlayParameter.PLAY_PARAM_SCU_TOKEN);
+//
+//        mAliyunVodPlayerView.setVidSts(vidSts);
+//    }
+//
+//    private static class MyFrameInfoListener implements IPlayer.OnRenderingStartListener {
+//
+//        private WeakReference<ControlMainActivity> activityWeakReference;
+//
+//        public MyFrameInfoListener(ControlMainActivity controlMainActivity) {
+//            activityWeakReference = new WeakReference<ControlMainActivity>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onRenderingStart() {
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onFirstFrameStart();
+//            }
+//        }
+//    }
+//
+//    private void onFirstFrameStart() {
+//        if (mAliyunVodPlayerView != null) {
+//            Map<String, String> debugInfo = mAliyunVodPlayerView.getAllDebugInfo();
+//            if (debugInfo == null) {
+//                return;
+//            }
+//            long createPts = 0;
+//            if (debugInfo.get("create_player") != null) {
+//                String time = debugInfo.get("create_player");
+//                createPts = (long) Double.parseDouble(time);
+//                logStrs.add(format.format(new Date(createPts)) + getString(com.aliyun.vodplayer.R.string.log_player_create_success));
+//            }
+//            if (debugInfo.get("open-url") != null) {
+//                String time = debugInfo.get("open-url");
+//                long openPts = (long) Double.parseDouble(time) + createPts;
+//                logStrs.add(format.format(new Date(openPts)) + getString(com.aliyun.vodplayer.R.string.log_open_url_success));
+//            }
+//            if (debugInfo.get("find-stream") != null) {
+//                String time = debugInfo.get("find-stream");
+//                long findPts = (long) Double.parseDouble(time) + createPts;
+//                logStrs.add(format.format(new Date(findPts)) + getString(com.aliyun.vodplayer.R.string.log_request_stream_success));
+//            }
+//            if (debugInfo.get("open-stream") != null) {
+//                String time = debugInfo.get("open-stream");
+//                long openPts = (long) Double.parseDouble(time) + createPts;
+//                logStrs.add(format.format(new Date(openPts)) + getString(com.aliyun.vodplayer.R.string.log_start_open_stream));
+//            }
+//            logStrs.add(format.format(new Date()) + getString(com.aliyun.vodplayer.R.string.log_first_frame_played));
+////            for (String log : logStrs) {
+////                tvLogs.append(log + "\n");
+////            }
+//        }
+//    }
+//
+//    private static class MyChangeQualityListener implements OnChangeQualityListener {
+//
+//        private WeakReference<ControlMainActivity> activityWeakReference;
+//
+//        public MyChangeQualityListener(ControlMainActivity controlMainActivity) {
+//            activityWeakReference = new WeakReference<ControlMainActivity>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onChangeQualitySuccess(String finalQuality) {
+//
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onChangeQualitySuccess(finalQuality);
+//            }
+//        }
+//
+//        @Override
+//        public void onChangeQualityFail(int code, String msg) {
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onChangeQualityFail(code, msg);
+//            }
+//        }
+//    }
+//
+//    private void onChangeQualitySuccess(String finalQuality) {
+//        logStrs.add(format.format(new Date()) + getString(com.aliyun.vodplayer.R.string.log_change_quality_success));
+//        FixedToastUtils.show(ControlMainActivity.this.getApplicationContext(),
+//                getString(com.aliyun.vodplayer.R.string.log_change_quality_success));
+//    }
+//
+//    void onChangeQualityFail(int code, String msg) {
+//        logStrs.add(format.format(new Date()) + getString(com.aliyun.vodplayer.R.string.log_change_quality_fail) + " : " + msg);
+//        FixedToastUtils.show(ControlMainActivity.this.getApplicationContext(),
+//                getString(com.aliyun.vodplayer.R.string.log_change_quality_fail));
+//    }
+//    private static class MyStoppedListener implements OnStoppedListener {
+//
+//        private WeakReference<ControlMainActivity> activityWeakReference;
+//
+//        public MyStoppedListener(ControlMainActivity controlMainActivity) {
+//            activityWeakReference = new WeakReference<ControlMainActivity>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onStop() {
+//            ControlMainActivity activity = activityWeakReference.get();
+//            if (activity != null) {
+//                activity.onStopped();
+//            }
+//        }
+//    }
+//    private void onStopped() {
+//        FixedToastUtils.show(ControlMainActivity.this.getApplicationContext(), com.aliyun.vodplayer.R.string.log_play_stopped);
+//    }
+//    private class MyPlayViewClickListener implements AliyunVodPlayerView.OnPlayerViewClickListener {
+//
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyPlayViewClickListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onClick(AliyunScreenMode screenMode, AliyunVodPlayerView.PlayViewType viewType) {
+//            long currentClickTime = System.currentTimeMillis();
+//            // 防止快速点击
+//            if (currentClickTime - oldTime <= 1000) {
+//                return;
+//            }
+//            oldTime = currentClickTime;
+//            // 如果当前的Type是Download, 就显示Download对话框
+//            if (viewType == AliyunVodPlayerView.PlayViewType.Download) {
+//                mCurrentDownloadScreenMode = screenMode;
+//                ControlMainActivity controlMainActivity = weakReference.get();
+//                if (controlMainActivity != null) {
+//                    controlMainActivity.showAddDownloadView = true;
+//                }
+//
+//                if (mAliyunVodPlayerView != null) {
+//                    MediaInfo currentMediaInfo = mAliyunVodPlayerView.getCurrentMediaInfo();
+//                    if (currentMediaInfo != null && currentMediaInfo.getVideoId().equals(PlayParameter.PLAY_PARAM_VID)) {
+//                        VidSts vidSts = new VidSts();
+//                        vidSts.setVid(PlayParameter.PLAY_PARAM_VID);
+//                        vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+//                        vidSts.setAccessKeyId(PlayParameter.PLAY_PARAM_AK_ID);
+//                        vidSts.setAccessKeySecret(PlayParameter.PLAY_PARAM_AK_SECRE);
+//                        vidSts.setSecurityToken(PlayParameter.PLAY_PARAM_SCU_TOKEN);
+//                        if (!mDownloadInPrepare) {
+//                            mDownloadInPrepare = true;
+////                            downloadManager.prepareDownload(vidSts);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    private static class MyOrientationChangeListener implements AliyunVodPlayerView.OnOrientationChangeListener {
+//
+//        private final WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOrientationChangeListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void orientationChange(boolean from, AliyunScreenMode currentMode) {
+//            ControlMainActivity activity = weakReference.get();
+//
+//            if (activity != null) {
+//                activity.hideDownloadDialog(from, currentMode);
+//                activity.hideShowMoreDialog(from, currentMode);
+//
+//            }
+//        }
+//    }
+//
+//    private void hideShowMoreDialog(boolean from, AliyunScreenMode currentMode) {
+//        if (showMoreDialog != null) {
+//            if (currentMode == AliyunScreenMode.Small) {
+//                showMoreDialog.dismiss();
+//                currentScreenMode = currentMode;
+//            }
+//        }
+//    }
+//
+//    private void hideDownloadDialog(boolean from, AliyunScreenMode currentMode) {
+//
+////        if (downloadDialog != null) {
+////            if (currentScreenMode != currentMode) {
+////                downloadDialog.dismiss();
+////                currentScreenMode = currentMode;
+////            }
+////        }
+//    }
+//    private static class MyShowMoreClickLisener implements ControlView.OnShowMoreClickListener {
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        MyShowMoreClickLisener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void showMore() {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                long currentClickTime = System.currentTimeMillis();
+//                // 防止快速点击
+//                if (currentClickTime - activity.oldTime <= 1000) {
+//                    return;
+//                }
+//                activity.oldTime = currentClickTime;
+//                activity.showMore(activity);
+//                activity.requestVidSts();
+//            }
+//
+//        }
+//    }
+//
+//    private void showMore(final ControlMainActivity activity) {
+//        showMoreDialog = new AlivcShowMoreDialog(activity);
+//        AliyunShowMoreValue moreValue = new AliyunShowMoreValue();
+//        moreValue.setSpeed(mAliyunVodPlayerView.getCurrentSpeed());
+//        moreValue.setVolume((int) mAliyunVodPlayerView.getCurrentVolume());
+//
+//        ShowMoreView showMoreView = new ShowMoreView(activity, moreValue);
+//        showMoreDialog.setContentView(showMoreView);
+//        showMoreDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+//        showMoreDialog.show();
+////        showMoreView.setOnDownloadButtonClickListener(() -> {
+////            long currentClickTime = System.currentTimeMillis();
+////            // 防止快速点击
+////            if (currentClickTime - downloadOldTime <= 1000) {
+////                return;
+////            }
+////            downloadOldTime = currentClickTime;
+////            // 点击下载
+////            showMoreDialog.dismiss();
+////            if ("url".equals(PlayParameter.PLAY_PARAM_TYPE) || "localSource".equals(PlayParameter.PLAY_PARAM_TYPE)) {
+////                FixedToastUtils.show(activity, getResources().getString(com.aliyun.vodplayer.R.string.alivc_video_not_support_download));
+////                return;
+////            }
+////            mCurrentDownloadScreenMode = AliyunScreenMode.Full;
+////            showAddDownloadView = true;
+////            if (mAliyunVodPlayerView != null) {
+////                MediaInfo currentMediaInfo = mAliyunVodPlayerView.getCurrentMediaInfo();
+////                if (currentMediaInfo != null && currentMediaInfo.getVideoId().equals(PlayParameter.PLAY_PARAM_VID)) {
+////                    VidSts vidSts = new VidSts();
+////                    vidSts.setVid(PlayParameter.PLAY_PARAM_VID);
+////                    vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+////                    vidSts.setAccessKeyId(PlayParameter.PLAY_PARAM_AK_ID);
+////                    vidSts.setAccessKeySecret(PlayParameter.PLAY_PARAM_AK_SECRE);
+////                    vidSts.setSecurityToken(PlayParameter.PLAY_PARAM_SCU_TOKEN);
+//////                        downloadManager.prepareDownload(vidSts);
+////                }
+////            }
+////        });
+//
+//        showMoreView.setOnSpeedCheckedChangedListener((group, checkedId) -> {
+//            // 点击速度切换
+//            if (checkedId == com.aliyun.vodplayer.R.id.rb_speed_normal) {
+//                mAliyunVodPlayerView.changeSpeed(SpeedValue.One);
+//            } else if (checkedId == com.aliyun.vodplayer.R.id.rb_speed_onequartern) {
+//                mAliyunVodPlayerView.changeSpeed(SpeedValue.OneQuartern);
+//            } else if (checkedId == com.aliyun.vodplayer.R.id.rb_speed_onehalf) {
+//                mAliyunVodPlayerView.changeSpeed(SpeedValue.OneHalf);
+//            } else if (checkedId == com.aliyun.vodplayer.R.id.rb_speed_twice) {
+//                mAliyunVodPlayerView.changeSpeed(SpeedValue.Twice);
+//            }
+//
+//        });
+//
+//        /**
+//         * 初始化亮度
+//         */
+//        if (mAliyunVodPlayerView != null) {
+//            showMoreView.setBrightness(mAliyunVodPlayerView.getScreenBrightness());
+//        }
+//        // 亮度seek
+//        showMoreView.setOnLightSeekChangeListener(new ShowMoreView.OnLightSeekChangeListener() {
+//            @Override
+//            public void onStart(SeekBar seekBar) {
+//
+//            }
+//
+//            @Override
+//            public void onProgress(SeekBar seekBar, int progress, boolean fromUser) {
+//                setWindowBrightness(progress);
+//                if (mAliyunVodPlayerView != null) {
+//                    mAliyunVodPlayerView.setScreenBrightness(progress);
+//                }
+//            }
+//
+//            @Override
+//            public void onStop(SeekBar seekBar) {
+//
+//            }
+//        });
+//
+//        /**
+//         * 初始化音量
+//         */
+//        if (mAliyunVodPlayerView != null) {
+//            showMoreView.setVoiceVolume(mAliyunVodPlayerView.getCurrentVolume());
+//        }
+//        showMoreView.setOnVoiceSeekChangeListener(new ShowMoreView.OnVoiceSeekChangeListener() {
+//            @Override
+//            public void onStart(SeekBar seekBar) {
+//
+//            }
+//
+//            @Override
+//            public void onProgress(SeekBar seekBar, int progress, boolean fromUser) {
+//                mAliyunVodPlayerView.setCurrentVolume(progress / 100.00f);
+//            }
+//
+//            @Override
+//            public void onStop(SeekBar seekBar) {
+//
+//            }
+//        });
+//
+//    }
+//    /**
+//     * 设置屏幕亮度
+//     */
+//    private void setWindowBrightness(int brightness) {
+//        Window window = getWindow();
+//        WindowManager.LayoutParams lp = window.getAttributes();
+//        lp.screenBrightness = brightness / 255.0f;
+//        window.setAttributes(lp);
+//    }
+//    private static class MyPlayStateBtnClickListener implements AliyunVodPlayerView.OnPlayStateBtnClickListener {
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        MyPlayStateBtnClickListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onPlayBtnClick(int playerState) {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onPlayStateSwitch(playerState);
+//            }
+//        }
+//    }
+//
+//    /**
+//     * 播放状态切换
+//     */
+//    private void onPlayStateSwitch(int playerState) {
+//        if (playerState == IPlayer.started) {
+////            tvLogs.append(format.format(new Date()) + " 暂停 \n");
+//        } else if (playerState == IPlayer.paused) {
+////            tvLogs.append(format.format(new Date()) + " 开始 \n");
+//        }
+//
+//    }
+//
+//    private static class MySeekCompleteListener implements IPlayer.OnSeekCompleteListener {
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        MySeekCompleteListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onSeekComplete() {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onSeekComplete();
+//            }
+//        }
+//    }
+//
+//    private void onSeekComplete() {
+////        tvLogs.append(format.format(new Date()) + getString(R.string.log_seek_completed) + "\n");
+//    }
+//
+//    private static class MySeekStartListener implements AliyunVodPlayerView.OnSeekStartListener {
+//        WeakReference<ControlMainActivity> weakReference;
+//
+//        MySeekStartListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onSeekStart(int position) {
+//            ControlMainActivity activity = weakReference.get();
+//            if (activity != null) {
+//                activity.onSeekStart(position);
+//            }
+//        }
+//    }
+//    private void onSeekStart(int position) {
+////        tvLogs.append(format.format(new Date()) + getString(R.string.log_seek_start) + "\n");
+//    }
+//
+//    private static class MyOnScreenBrightnessListener implements AliyunVodPlayerView.OnScreenBrightnessListener {
+//
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnScreenBrightnessListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onScreenBrightness(int brightness) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                controlMainActivity.setWindowBrightness(brightness);
+//                if (controlMainActivity.mAliyunVodPlayerView != null) {
+//                    controlMainActivity.mAliyunVodPlayerView.setScreenBrightness(brightness);
+//                }
+//            }
+//        }
+//    }
+//    /**
+//     * 播放器出错监听
+//     */
+//    private static class MyOnErrorListener implements IPlayer.OnErrorListener {
+//
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnErrorListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onError(com.aliyun.player.bean.ErrorInfo errorInfo) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                controlMainActivity.onError(errorInfo);
+//            }
+//        }
+//    }
+//    private static class MyOnSeiDataListener implements IPlayer.OnSeiDataListener{
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnSeiDataListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onSeiData(int i, byte[] bytes) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            String seiMessage = new String(bytes);
+//            if (controlMainActivity != null) {
+//                String log = new SimpleDateFormat("HH:mm:ss.SS").format(new Date())+"SEI:type:"+i+",content:"+seiMessage+"\n";
+////                controlMainActivity.tvLogs.append(log);
+//            }
+//            Log.e("SEI:", "type:"+i+",content:"+seiMessage);
+//        }
+//    }
+//    private void onError(com.aliyun.player.bean.ErrorInfo errorInfo) {
+//        //鉴权过期
+//        if (errorInfo.getCode().getValue() == ErrorCode.ERROR_SERVER_POP_UNKNOWN.getValue()) {
+//            mIsTimeExpired = true;
+//        }
+//    }
+//
+//    public void setmAliyunVodPlayerView(AliyunVodPlayerView aliyunVodPlayerView){
+//        if (mAliyunVodPlayerView != null && mAliyunVodPlayerView != aliyunVodPlayerView){
+//            mAliyunVodPlayerView.onDestroy();
+//            mAliyunVodPlayerView = null;
+//            mAliyunVodPlayerView = aliyunVodPlayerView;
+//            initAliyunPlayerView();
+//        } else if (mAliyunVodPlayerView == null){
+//            mAliyunVodPlayerView = aliyunVodPlayerView;
+//            initAliyunPlayerView();
+//        }
+//        setPlaySource();
+//    }
+//    private static class MyOnScreenModeListener implements OnChangeScreenModeListener {
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnScreenModeListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onChangeScreenModeFull() {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if(controlMainActivity != null){
+//                controlMainActivity.onChangeScreenModeFull();
+//            }
+//        }
+//
+//        @Override
+//        public void onChangeScreenModeSmall() {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if(controlMainActivity != null){
+//                controlMainActivity.onChangeScreenModeSmall();
+//            }
+//        }
+//    }
+//
+//    private void onChangeScreenModeFull(){
+//        if (mAliyunVodPlayerView != null){
+//        }
+//    }
+//
+//    private void onChangeScreenModeSmall(){
+//
+//    }
+//
+//    private static class MyOnRetuenListener implements OnReturnListener {
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyOnRetuenListener(ControlMainActivity activity) {
+//            weakReference = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void onReturn() {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null){
+//                controlMainActivity.onReturn();
+//            }
+//        }
+//    }
+//
+//    private void onReturn(){ //录播返回
+//        String beforePageS[] = mBeforePage.split("/");
+//        if (beforePageS.length <= 0){
+//            return;
+//        }
+//        if (beforePageS[beforePageS.length - 1].equals("课程")){ //说明上个界面是课程界面
+//            Page_Course();
+//        } else if (beforePageS[beforePageS.length - 1].equals("首页")){ //说明上个界面是首页界面
+//            Page_HomePage();
+//        } else if (beforePageS[beforePageS.length - 1].equals("我的课程")){//说明上个界面是我的课程界面
+//            mPage = "我的课程";
+//            mBeforePage = "我的";
+//            if(mModelMy != null){
+//                ((ModelMy) mModelMy).MyClassShow();
+//            }
+//        } else if (beforePageS[beforePageS.length - 1].equals("我的收藏")){ //说明上个界面是我的收藏界面
+//            mPage = "我的收藏";
+//            mBeforePage = "我的";
+//            if(mModelMy != null){
+//                ((ModelMy) mModelMy).MyCollectShow();
+//            }
+//        }
+//    }
+//
+//    private void setPlaySource() {
+//        if ("localSource".equals(PlayParameter.PLAY_PARAM_TYPE)) {
+//            UrlSource urlSource = new UrlSource();
+//            urlSource.setUri(PlayParameter.PLAY_PARAM_URL);
+//            //默认是5000
+//            int maxDelayTime = 5000;
+//            if (PlayParameter.PLAY_PARAM_URL.startsWith("artp")) {
+//                //如果url的开头是artp，将直播延迟设置成100，
+//                maxDelayTime = 100;
+//            }
+//            if (mAliyunVodPlayerView != null) {
+//                PlayerConfig playerConfig = mAliyunVodPlayerView.getPlayerConfig();
+//                playerConfig.mMaxDelayTime = maxDelayTime;
+//                //开启SEI事件通知
+//                playerConfig.mEnableSEI = true;
+//                mAliyunVodPlayerView.setPlayerConfig(playerConfig);
+//                mAliyunVodPlayerView.setLocalSource(urlSource);
+//            }
+//
+//        } else if ("vidsts".equals(PlayParameter.PLAY_PARAM_TYPE)) {
+//            if (!inRequest) {
+//                VidSts vidSts = new VidSts();
+//                vidSts.setVid(PlayParameter.PLAY_PARAM_VID);
+//                vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+//                vidSts.setAccessKeyId(PlayParameter.PLAY_PARAM_AK_ID);
+//                vidSts.setAccessKeySecret(PlayParameter.PLAY_PARAM_AK_SECRE);
+//                vidSts.setSecurityToken(PlayParameter.PLAY_PARAM_SCU_TOKEN);
+//                if (mAliyunVodPlayerView != null) {
+//                    mAliyunVodPlayerView.setVidSts(vidSts);
+//                }
+//            }
+//        }
+//    }
+//
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        mIsInBackground = false;
+//        updatePlayerViewMode();
+////        updateDownloadView();
+//        if (mAliyunVodPlayerView != null) {
+//            mAliyunVodPlayerView.setAutoPlay(true);
+//            mAliyunVodPlayerView.onResume();
+//        }
+//    }
+//
+//    @Override
+//    public void onConfigurationChanged(Configuration newConfig) {
+//        super.onConfigurationChanged(newConfig);
+//        updatePlayerViewMode();
+//    }
+//
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        mIsInBackground = true;
+//        if (mAliyunVodPlayerView != null) {
+//            mAliyunVodPlayerView.setAutoPlay(false);
+//            mAliyunVodPlayerView.onStop();
+//        }
+//    }
+//
+//    @Override
+//    public void onWindowFocusChanged(boolean hasFocus) {
+//        super.onWindowFocusChanged(hasFocus);
+//        //解决某些手机上锁屏之后会出现标题栏的问题。
+//        updatePlayerViewMode();
+//    }
+//
+//    private void updatePlayerViewMode() {
+//        if (mAliyunVodPlayerView != null) {
+//            int orientation = getResources().getConfiguration().orientation;
+//            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+//                //转为竖屏了。
+//                //显示状态栏
+//                //                if (!isStrangePhone()) {
+//                //                    getSupportActionBar().show();
+//                //                }
+//
+//                this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//                mAliyunVodPlayerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+//
+//                //设置view的布局，宽高之类
+//                RelativeLayout.LayoutParams aliVcVideoViewLayoutParams = (RelativeLayout.LayoutParams) mAliyunVodPlayerView
+//                        .getLayoutParams();
+//                aliVcVideoViewLayoutParams.height = getResources().getDimensionPixelSize(R.dimen.dp_244);
+//                aliVcVideoViewLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+//            } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+//                //转到横屏了。
+//                //隐藏状态栏
+//                if (!isStrangePhone()) {
+//                    this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+//                            WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//                    mAliyunVodPlayerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+//                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+//                }
+//                //设置view的布局，宽高
+//                RelativeLayout.LayoutParams aliVcVideoViewLayoutParams = (RelativeLayout.LayoutParams) mAliyunVodPlayerView
+//                        .getLayoutParams();
+//                aliVcVideoViewLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+//                aliVcVideoViewLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+//            }
+//        }
+//    }
+//
+//    protected boolean isStrangePhone() {
+//        boolean strangePhone = "mx5".equalsIgnoreCase(Build.DEVICE)
+//                || "Redmi Note2".equalsIgnoreCase(Build.DEVICE)
+//                || "Z00A_1".equalsIgnoreCase(Build.DEVICE)
+//                || "hwH60-L02".equalsIgnoreCase(Build.DEVICE)
+//                || "hermes".equalsIgnoreCase(Build.DEVICE)
+//                || ("V4".equalsIgnoreCase(Build.DEVICE) && "Meitu".equalsIgnoreCase(Build.MANUFACTURER))
+//                || ("m1metal".equalsIgnoreCase(Build.DEVICE) && "Meizu".equalsIgnoreCase(Build.MANUFACTURER));
+//
+////        VcPlayerLog.e("lfj1115 ", " Build.Device = " + Build.DEVICE + " , isStrange = " + strangePhone);
+//        return strangePhone;
+//    }
+//
+//    private void copyAssets() {
+//        commenUtils = Common.getInstance(getApplicationContext()).copyAssetsToSD("encrypt", "huozhongedu");
+//        commenUtils.setFileOperateCallback(
+//
+//                new Common.FileOperateCallback() {
+//                    @Override
+//                    public void onSuccess() {
+//                        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/test_save/");
+//                        if (!file.exists()) {
+//                            file.mkdir();
+//                        }
+//
+//                        // 获取AliyunDownloadManager对象
+//                        downloadManager = AliyunDownloadManager.getInstance(getApplicationContext());
+//                        downloadManager.setEncryptFilePath(Environment.getExternalStorageDirectory().getAbsolutePath() + "/huozhongedu/encryptedApp.dat");
+//                        PrivateService.initService(getApplicationContext(), Environment.getExternalStorageDirectory().getAbsolutePath() + "/huozhongedu/encryptedApp.dat");
+//                        downloadManager.setDownloadDir(file.getAbsolutePath());
+//                        //设置同时下载个数
+//                        downloadManager.setMaxNum(5);
+//
+//                        downloadDataProvider = DownloadDataProvider.getSingleton(getApplicationContext());
+//                        // 更新sts回调
+//                        downloadManager.setRefreshStsCallback(new MyRefreshStsCallback());
+//
+//                        // 视频下载的回调
+//                        downloadManager.setDownloadInfoListener(new MyDownloadInfoListener(mThis));
+////                        downloadViewSetting(downloadView);
+//                    }
+//
+//                    @Override
+//                    public void onFailed(String error) {
+//                    }
+//                });
+//    }
+//    private static class MyRefreshStsCallback implements RefreshStsCallback {
+//
+//        @Override
+//        public VidSts refreshSts(String vid, String quality, String format, String title, boolean encript) {
+//            VcPlayerLog.d("refreshSts ", "refreshSts , vid = " + vid);
+//            //NOTE: 注意：这个不能启动线程去请求。因为这个方法已经在线程中调用了。
+//            VidSts vidSts = VidStsUtil.getVidSts(vid);
+//            if (vidSts == null) {
+//                return null;
+//            } else {
+//                vidSts.setVid(vid);
+//                vidSts.setQuality(quality, true);
+//                vidSts.setTitle(title);
+//                return vidSts;
+//            }
+//        }
+//    }
+//
+//    /**
+//     * 下载监听
+//     */
+//    private static class MyDownloadInfoListener implements AliyunDownloadInfoListener {
+//
+//        private WeakReference<ControlMainActivity> weakReference;
+//
+//        public MyDownloadInfoListener(ControlMainActivity controlMainActivity) {
+//            weakReference = new WeakReference<>(controlMainActivity);
+//        }
+//
+//        @Override
+//        public void onPrepared(List<AliyunDownloadMediaInfo> infos) {
+//            preparedVid = infos.get(0).getVid();
+//            Collections.sort(infos, new Comparator<AliyunDownloadMediaInfo>() {
+//                @Override
+//                public int compare(AliyunDownloadMediaInfo mediaInfo1, AliyunDownloadMediaInfo mediaInfo2) {
+//                    if (mediaInfo1.getSize() > mediaInfo2.getSize()) {
+//                        return 1;
+//                    }
+//                    if (mediaInfo1.getSize() < mediaInfo2.getSize()) {
+//                        return -1;
+//                    }
+//
+//                    if (mediaInfo1.getSize() == mediaInfo2.getSize()) {
+//                        return 0;
+//                    }
+//                    return 0;
+//                }
+//            });
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                controlMainActivity.mDownloadInPrepare = false;
+//                controlMainActivity.onDownloadPrepared(infos, controlMainActivity.showAddDownloadView);
+//            }
+//        }
+//
+//        @Override
+//        public void onAdd(AliyunDownloadMediaInfo info) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                if (controlMainActivity.downloadDataProvider != null) {
+//                    controlMainActivity.downloadDataProvider.addDownloadMediaInfo(info);
+//                }
+//            }
+//        }
+//
+//        @Override
+//        public void onStart(AliyunDownloadMediaInfo info) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                if (controlMainActivity.dialogDownloadView != null) {
+//                    controlMainActivity.dialogDownloadView.updateInfo(info);
+//                }
+////                if (controlMainActivity.downloadView != null) {
+////                    controlMainActivity.downloadView.updateInfo(info);
+////                }
+//
+//            }
+//        }
+//
+//        @Override
+//        public void onProgress(AliyunDownloadMediaInfo info, int percent) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                if (controlMainActivity.dialogDownloadView != null) {
+//                    controlMainActivity.dialogDownloadView.updateInfo(info);
+//                }
+////                if (controlMainActivity.downloadView != null) {
+////                    controlMainActivity.downloadView.updateInfo(info);
+////                }
+//            }
+//        }
+//
+//        @Override
+//        public void onStop(AliyunDownloadMediaInfo info) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                if (controlMainActivity.dialogDownloadView != null) {
+//                    controlMainActivity.dialogDownloadView.updateInfo(info);
+//                }
+////                if (controlMainActivity.downloadView != null) {
+////                    controlMainActivity.downloadView.updateInfo(info);
+////                }
+//            }
+//        }
+//
+//        @Override
+//        public void onCompletion(AliyunDownloadMediaInfo info) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                synchronized (controlMainActivity) {
+////                    if (controlMainActivity.downloadView != null) {
+////                        controlMainActivity.downloadView.updateInfoByComplete(info);
+////                    }
+//
+//                    if (controlMainActivity.dialogDownloadView != null) {
+//                        controlMainActivity.dialogDownloadView.updateInfoByComplete(info);
+//                    }
+//
+//                    if (controlMainActivity.downloadDataProvider != null) {
+//                        controlMainActivity.downloadDataProvider.addDownloadMediaInfo(info);
+//                    }
+//                }
+//            }
+//        }
+//
+//        @Override
+//        public void onError(AliyunDownloadMediaInfo info, ErrorCode code, String msg, String requestId) {
+//            ControlMainActivity controlMainActivity = weakReference.get();
+//            if (controlMainActivity != null) {
+//                controlMainActivity.mDownloadInPrepare = false;
+////                if (controlMainActivity.downloadView != null) {
+////                    controlMainActivity.downloadView.updateInfoByError(info);
+////                }
+//
+//                if (controlMainActivity.dialogDownloadView != null) {
+//                    controlMainActivity.dialogDownloadView.updateInfoByError(info);
+//                }
+//
+//                //鉴权过期
+//                if (code.getValue() == ErrorCode.ERROR_SERVER_POP_UNKNOWN.getValue()) {
+//                    controlMainActivity.refreshDownloadVidSts(info);
+//                }
+//                Message message = Message.obtain();
+//                Bundle bundle = new Bundle();
+//                bundle.putString(DOWNLOAD_ERROR_KEY, msg);
+//                message.setData(bundle);
+//                message.what = DOWNLOAD_ERROR;
+//                controlMainActivity.playerHandler = new PlayerHandler(controlMainActivity);
+//                controlMainActivity.playerHandler.sendMessage(message);
+//            }
+//        }
+//
+//        @Override
+//        public void onWait(AliyunDownloadMediaInfo info) {
+////            mPlayerDownloadAdapter.updateData(info);
+//        }
+//
+//        @Override
+//        public void onDelete(AliyunDownloadMediaInfo info) {
+////            mPlayerDownloadAdapter.deleteData(info);
+//        }
+//
+//        @Override
+//        public void onDeleteAll() {
+////            mPlayerDownloadAdapter.clearAll();
+//        }
+//
+//        @Override
+//        public void onFileProgress(AliyunDownloadMediaInfo info) {
+//
+//        }
+//    }
+//
+//    private static class PlayerHandler extends Handler {
+//        //持有弱引用ControlMainActivity,GC回收时会被回收掉.
+//        private final WeakReference<ControlMainActivity> mActivty;
+//
+//        public PlayerHandler(ControlMainActivity activity) {
+//            mActivty = new WeakReference<>(activity);
+//        }
+//
+//        @Override
+//        public void handleMessage(Message msg) {
+//            ControlMainActivity activity = mActivty.get();
+//            super.handleMessage(msg);
+//            if (activity != null) {
+//                switch (msg.what) {
+//                    case DOWNLOAD_ERROR:
+//                        ToastUtils.show(activity,msg.getData().getString(DOWNLOAD_ERROR_KEY));
+//                        Log.d("donwload", msg.getData().getString(DOWNLOAD_ERROR_KEY));
+//                        break;
+//                    default:
+//                        break;
+//                }
+//            }
+//        }
+//    }
+//
+//    List<AliyunDownloadMediaInfo> aliyunDownloadMediaInfoList = new ArrayList<>();
+//    private List<AliyunDownloadMediaInfo> currentPreparedMediaInfo = null;
+//
+//    private void onDownloadPrepared(List<AliyunDownloadMediaInfo> infos, boolean showAddDownloadView) {
+//        currentPreparedMediaInfo = new ArrayList<>();
+//        currentPreparedMediaInfo.addAll(infos);
+//        if (showAddDownloadView) {
+//            showAddDownloadView(mCurrentDownloadScreenMode);
+//        }
+//
+//    }
+//
+//    private Dialog downloadDialog = null;
+//
+//    private AliyunDownloadMediaInfo aliyunDownloadMediaInfo;
+//
+//    /**
+//     * 显示下载选择项 download 对话框
+//     *
+//     * @param screenMode
+//     */
+//    private void showAddDownloadView(AliyunScreenMode screenMode) {
+//        //这个时候视频的状态已经是delete了
+//        if (currentPreparedMediaInfo != null && currentPreparedMediaInfo.get(0).getVid().equals(preparedVid)) {
+//            downloadDialog = new DownloadChoiceDialog(this, screenMode);
+//            final AddDownloadView contentView = new AddDownloadView(this, screenMode);
+//            contentView.onPrepared(currentPreparedMediaInfo);
+//            contentView.setOnViewClickListener(viewClickListener);
+//            final View inflate = LayoutInflater.from(getApplicationContext()).inflate(
+//                    com.aliyun.vodplayer.R.layout.alivc_dialog_download_video, null, false);
+//            dialogDownloadView = inflate.findViewById(com.aliyun.vodplayer.R.id.download_view);
+//            downloadDialog.setContentView(contentView);
+//            downloadDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//                @Override
+//                public void onDismiss(DialogInterface dialogInterface) {
+//                    if (dialogDownloadView != null) {
+//                        dialogDownloadView.setOnDownloadViewListener(null);
+//                        dialogDownloadView.setOnDownloadedItemClickListener(null);
+//                    }
+//                }
+//            });
+//            if (!downloadDialog.isShowing()) {
+//                downloadDialog.show();
+//            }
+//            downloadDialog.setCanceledOnTouchOutside(true);
+//
+//            if (screenMode == AliyunScreenMode.Full) {
+//                contentView.setOnShowVideoListLisener(new AddDownloadView.OnShowNativeVideoBtnClickListener() {
+//                    @Override
+//                    public void onShowVideo() {
+//                        if (downloadDataProvider != null) {
+//                            downloadDataProvider.restoreMediaInfo(new LoadDbDatasListener() {
+//                                @Override
+//                                public void onLoadSuccess(List<AliyunDownloadMediaInfo> dataList) {
+//                                    if (dialogDownloadView != null) {
+//                                        dialogDownloadView.addAllDownloadMediaInfo(dataList);
+//                                    }
+//                                }
+//                            });
+//                        }
+//                        downloadDialog.setContentView(inflate);
+//                    }
+//                });
+//
+//                dialogDownloadView.setOnDownloadViewListener(new DownloadView.OnDownloadViewListener() {
+//                    @Override
+//                    public void onStop(AliyunDownloadMediaInfo downloadMediaInfo) {
+//                        downloadManager.stopDownload(downloadMediaInfo);
+//                    }
+//
+//                    @Override
+//                    public void onStart(AliyunDownloadMediaInfo downloadMediaInfo) {
+//                        downloadManager.startDownload(downloadMediaInfo);
+//                    }
+//
+//                    @Override
+//                    public void onDeleteDownloadInfo(final ArrayList<AlivcDownloadMediaInfo> alivcDownloadMediaInfos) {
+//                        // 视频删除的dialog
+//                        final AlivcDialog alivcDialog = new AlivcDialog(ControlMainActivity.this);
+//                        alivcDialog.setDialogIcon(com.aliyun.vodplayer.R.drawable.icon_delete_tips);
+//                        alivcDialog.setMessage(getResources().getString(com.aliyun.vodplayer.R.string.alivc_delete_confirm));
+//                        alivcDialog.setOnConfirmclickListener(getResources().getString(com.aliyun.vodplayer.R.string.alivc_dialog_sure),
+//                                new AlivcDialog.onConfirmClickListener() {
+//                                    @Override
+//                                    public void onConfirm() {
+//                                        alivcDialog.dismiss();
+//                                        if (alivcDownloadMediaInfos != null && alivcDownloadMediaInfos.size() > 0) {
+//                                            dialogDownloadView.deleteDownloadInfo();
+////                                            if (downloadView != null) {
+////                                                for (AlivcDownloadMediaInfo alivcDownloadMediaInfo : alivcDownloadMediaInfos) {
+////                                                    if (alivcDownloadMediaInfo.isCheckedState()) {
+////                                                        downloadView.deleteDownloadInfo(alivcDownloadMediaInfo.getAliyunDownloadMediaInfo());
+////                                                    }
+////                                                }
+////
+////                                            }
+//                                            if (downloadManager != null) {
+//                                                for (AlivcDownloadMediaInfo alivcDownloadMediaInfo : alivcDownloadMediaInfos) {
+//                                                    downloadManager.deleteFile(alivcDownloadMediaInfo.getAliyunDownloadMediaInfo());
+//                                                }
+//
+//                                            }
+//                                            downloadDataProvider.deleteAllDownloadInfo(alivcDownloadMediaInfos);
+//                                        } else {
+//                                            FixedToastUtils.show(ControlMainActivity.this, "没有删除的视频选项...");
+//                                        }
+//                                    }
+//                                });
+//                        alivcDialog.setOnCancelOnclickListener(getResources().getString(com.aliyun.vodplayer.R.string.alivc_dialog_cancle),
+//                                new AlivcDialog.onCancelOnclickListener() {
+//                                    @Override
+//                                    public void onCancel() {
+//                                        alivcDialog.dismiss();
+//                                    }
+//                                });
+//                        alivcDialog.show();
+//                    }
+//                });
+//
+//                dialogDownloadView.setOnDownloadedItemClickListener(new DownloadView.OnDownloadItemClickListener() {
+//                    @Override
+//                    public void onDownloadedItemClick(final int positin) {
+//                        ArrayList<AlivcDownloadMediaInfo> allDownloadMediaInfo = dialogDownloadView.getAllDownloadMediaInfo();
+//                        List<AliyunDownloadMediaInfo> dataList = new ArrayList<>();
+//                        for (AlivcDownloadMediaInfo alivcDownloadMediaInfo : allDownloadMediaInfo) {
+//                            dataList.add(alivcDownloadMediaInfo.getAliyunDownloadMediaInfo());
+//                        }
+////                List<AliyunDownloadMediaInfo> dataList = downloadDataProvider.getAllDownloadMediaInfo();
+//                        // 存入顺序和显示顺序相反,  所以进行倒序
+//                        ArrayList<AliyunDownloadMediaInfo> tempList = new ArrayList<>();
+//                        int size = dataList.size();
+//                        for (AliyunDownloadMediaInfo aliyunDownloadMediaInfo : dataList) {
+//                            if (aliyunDownloadMediaInfo.getProgress() == 100) {
+//                                tempList.add(aliyunDownloadMediaInfo);
+//                            }
+//                        }
+//
+//                        Collections.reverse(tempList);
+//                        if ((dataList.size() - 1) < 0 || (dataList.size() - 1) > tempList.size()) {
+//                            return;
+//                        }
+//                        tempList.add(dataList.get(dataList.size() - 1));
+//                        for (int i = 0; i < size; i++) {
+//                            AliyunDownloadMediaInfo aliyunDownloadMediaInfo = dataList.get(i);
+//                            if (!tempList.contains(aliyunDownloadMediaInfo)) {
+//                                tempList.add(aliyunDownloadMediaInfo);
+//                            }
+//                        }
+//
+//                        if (positin < 0) {
+//                            FixedToastUtils.show(ControlMainActivity.this, "视频资源不存在");
+//                            return;
+//                        }
+//
+//                        // 如果点击列表中的视频, 需要将类型改为vid
+//                        AliyunDownloadMediaInfo aliyunDownloadMediaInfo = tempList.get(positin);
+//                        PlayParameter.PLAY_PARAM_TYPE = "localSource";
+//                        if (aliyunDownloadMediaInfo != null) {
+//                            PlayParameter.PLAY_PARAM_URL = aliyunDownloadMediaInfo.getSavePath();
+//                            mAliyunVodPlayerView.updateScreenShow();
+//                            changePlayLocalSource(PlayParameter.PLAY_PARAM_URL, aliyunDownloadMediaInfo.getTitle());
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onDownloadingItemClick(ArrayList<AlivcDownloadMediaInfo> infos, int position) {
+//                        AlivcDownloadMediaInfo alivcInfo = infos.get(position);
+//                        AliyunDownloadMediaInfo aliyunDownloadInfo = alivcInfo.getAliyunDownloadMediaInfo();
+//                        AliyunDownloadMediaInfo.Status status = aliyunDownloadInfo.getStatus();
+//                        if (status == AliyunDownloadMediaInfo.Status.Error || status == AliyunDownloadMediaInfo.Status.Wait) {
+//                            //downloadManager.removeDownloadMedia(aliyunDownloadInfo);
+//                            downloadManager.startDownload(aliyunDownloadInfo);
+//
+//                        }
+//                    }
+//
+//                });
+//            }
+//        }
+//    }
+//
+//    /**
+//     * 开始下载的事件监听
+//     */
+//    private AddDownloadView.OnViewClickListener viewClickListener = new AddDownloadView.OnViewClickListener() {
+//        @Override
+//        public void onCancel() {
+//            if (downloadDialog != null) {
+//                downloadDialog.dismiss();
+//            }
+//        }
+//
+//        @Override
+//        public void onDownload(AliyunDownloadMediaInfo info) {
+//            if (downloadDialog != null) {
+//                downloadDialog.dismiss();
+//            }
+//            aliyunDownloadMediaInfo = info;
+//            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+//                int permission = ContextCompat.checkSelfPermission(ControlMainActivity.this,
+//                        Manifest.permission.WRITE_EXTERNAL_STORAGE);
+//                if (permission != PackageManager.PERMISSION_GRANTED) {
+//
+////                    ActivityCompat.requestPermissions(ControlMainActivity.this, PERMISSIONS_STORAGE,
+////                            REQUEST_EXTERNAL_STORAGE);
+//
+//                } else {
+//                    addNewInfo(info);
+//                }
+//            } else {
+//                addNewInfo(info);
+//            }
+//
+//        }
+//    };
+//    private void addNewInfo(AliyunDownloadMediaInfo info) {
+//        if (downloadManager != null && info != null) {
+//            //todo
+////            downloadManager.addDownloadMedia(info);
+////            callDownloadPrepare(info.getVid(), info.getTitle());
+////            if (downloadView != null) {
+////                boolean hasAdd = downloadView.hasAdded(info);
+////                if (!hasAdd) {
+////                    if (downloadView != null && info != null) {
+////                        downloadView.addDownloadMediaInfo(info);
+////                    }
+////                    if (dialogDownloadView != null && info != null) {
+////                        dialogDownloadView.addDownloadMediaInfo(info);
+////                    }
+////                    downloadManager.startDownload(info);
+////                }
+////            }
+//        }
+//    }
+//
+//    /**
+//     * 刷新下载的VidSts
+//     */
+//    private void refreshDownloadVidSts(final AliyunDownloadMediaInfo downloadMediaInfo) {
+//        VidStsUtil.getVidSts(downloadMediaInfo.getVidSts().getVid(), new VidStsUtil.OnStsResultListener() {
+//            @Override
+//            public void onSuccess(String vid, String akid, String akSecret, String token) {
+//                if (downloadManager != null) {
+//                    VidSts vidSts = new VidSts();
+//                    vidSts.setVid(vid);
+//                    vidSts.setRegion(PlayParameter.PLAY_PARAM_REGION);
+//                    vidSts.setAccessKeyId(akid);
+//                    vidSts.setAccessKeySecret(akSecret);
+//                    vidSts.setSecurityToken(token);
+//                    downloadMediaInfo.setVidSts(vidSts);
+//                    PlayParameter.PLAY_PARAM_AK_ID = akid;
+//                    PlayParameter.PLAY_PARAM_AK_SECRE = akSecret;
+//                    PlayParameter.PLAY_PARAM_SCU_TOKEN = token;
+//                    downloadManager.prepareDownloadByQuality(downloadMediaInfo, AliyunDownloadManager.INTENT_STATE_START);
+//                }
+//            }
+//
+//            @Override
+//            public void onFail() {
+//
+//            }
+    //    });
+
+   // }
 }

@@ -85,14 +85,14 @@
                 android:id="@+id/layout_expression"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/dp_90"
-                android:layout_below="@id/edt_input"
+                android:layout_below="@id/edtInput"
                 android:visibility="gone" />
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rv_useful_expression"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/dp_90"
-                android:layout_below="@id/edt_input"
+                android:layout_below="@id/edtInput"
                 android:visibility="gone" />
         </LinearLayout>
 
